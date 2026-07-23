@@ -137,7 +137,8 @@ function createRunEvents() {
     },
     onTeam: renderTeam,
     onRoom: (room) => {
-      elements.room.textContent = `${room.type.toUpperCase()} ${String(room.id).padStart(2, '0')}`;
+      const origin = room.origin === 'interlace' ? 'R' : 'L';
+      elements.room.textContent = `${origin}:${room.type.toUpperCase()} ${String(room.id)}`;
     },
     onLoot: (value) => {
       elements.loot.textContent = formatCurrency(value);
@@ -171,12 +172,13 @@ function createRunEvents() {
       document.body.classList.add('boon-active');
       window.setTimeout(() => document.body.classList.remove('boon-active'), 700);
     },
-    onInterlace: () => {
-      elements.timer.textContent = 'INTERLACED';
+    onInterlace: (details) => {
+      elements.timer.textContent = `${details.rooms}R / ${details.bridges}B`;
       elements.timer.style.color = '#e393e4';
       document.body.classList.add('interlaced');
       elements.interlaceFlash.classList.add('active');
       window.setTimeout(() => elements.interlaceFlash.classList.remove('active'), 1100);
+      feed(`${details.rooms} remote rooms, ${details.connections} remote links, ${details.bridges} bridges, ${details.overlaps} overlaps.`, 'danger');
     },
     onFeed: feed,
     onFinish: showDebrief,
@@ -190,6 +192,15 @@ async function loadInitialMap() {
     const state = await response.json();
     const validation = validateMapState(state);
     if (!validation.valid) throw new Error(validation.errors.join(' '));
+    if (state.schemaVersion < 2) {
+      console.info('Upgrading committed map contract to the independent-interlace generator.');
+      return generateMapState({
+        seed: state.seedLabel ?? 'ABRIR-001',
+        roomCount: state.settings?.roomCount ?? state.rooms.length ?? 24,
+        loopChance: state.settings?.loopChance ?? 0.34,
+        interlaceAtSeconds: state.interlaceAtSeconds ?? 82,
+      });
+    }
     return state;
   } catch (error) {
     console.warn('Falling back to browser-generated map state.', error);
@@ -203,7 +214,7 @@ function installRun(state) {
   renderer.buildMap(state);
   minimap = new Minimap(elements.minimap, state);
   run = new RunController(renderer, state, createRunEvents());
-  elements.seed.textContent = `${state.seedLabel} / ${state.seed}`;
+  elements.seed.textContent = `${state.seedLabel} ↔ ${state.interlace?.seedLabel ?? 'PENDING'}`;
   elements.timer.style.color = '';
   elements.eventFeed.replaceChildren();
   elements.bossBanner.classList.remove('visible');
@@ -223,9 +234,15 @@ function begin() {
 function showDebrief(result) {
   started = false;
   elements.debriefTitle.textContent = result.success ? 'EXTRACTION COMPLETE' : 'FIELD TEAM LOST';
+  const seizureCopy = result.seized.length > 0
+    ? ` A Chave Geral seized ${result.seized.map((item) => item.name).join(', ')} at the threshold.`
+    : '';
+  const remoteCopy = result.interlaceTriggered
+    ? ` ${result.remoteObjects} remote object${result.remoteObjects === 1 ? '' : 's'} and ${result.remoteRoomsCleared} remote rooms survived accounting.`
+    : '';
   elements.debriefCopy.textContent = result.success
-    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back into the stable world after ${result.roomsCleared} stabilized rooms.`
-    : 'The passage closed around the team. The map state remains reproducible; the loss does not.';
+    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back after ${result.roomsCleared} stabilized rooms.${remoteCopy}${seizureCopy}`
+    : 'The passage closed around the team. Both generated map states remain reproducible; the loss does not.';
   elements.debriefValue.textContent = formatCurrency(result.value);
   elements.debriefCut.textContent = formatCurrency(result.instituteCut);
   elements.debriefBonus.textContent = formatCurrency(result.contractBonus);
@@ -244,7 +261,7 @@ function restart() {
   const seed = `ABRIR-${Date.now().toString(36).toUpperCase()}`;
   installRun(generateMapState({ seed, roomCount: 24, loopChance: 0.34, interlaceAtSeconds: 82 }));
   started = true;
-  feed('A new deterministic state has been forged.', 'good');
+  feed('Two new deterministic states have been generated and scheduled to collide.', 'good');
 }
 
 function exportMap() {
