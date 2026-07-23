@@ -16,6 +16,8 @@ const required = [
   'src/core/dungeon-generator.js',
   'src/core/room-layout.js',
   'src/content/chave-processes.js',
+  'src/content/characters.js',
+  'src/content/combat-kits.js',
   'src/content/contracts.js',
   'src/content/items.js',
   'src/content/room-skins.js',
@@ -29,12 +31,15 @@ const required = [
   'src/game/combat-system.js',
   'src/game/mission-system.js',
   'src/game/director-system.js',
+  'src/game/deployment-system.js',
   'src/game/progression-system.js',
   'src/game/archive-system.js',
   'src/ui/minimap.js',
   'src/ui/headquarters.js',
   'src/ui/headquarters.css',
   'src/ui/processes.css',
+  'src/ui/deployment-builder.js',
+  'src/ui/deployment-builder.css',
   'public/assets/ui/instituto-travessia-seal.svg',
   'public/assets/ui/chave-geral-audit-mark.svg',
   'public/maps/abrir-001.json',
@@ -77,14 +82,21 @@ if (new Set(INSTITUTE_UPGRADES.map((upgrade) => upgrade.id)).size !== INSTITUTE_
 
 const mainSource = await fs.readFile(path.join(root, 'src/main.js'), 'utf8');
 const characterSource = await fs.readFile(path.join(root, 'src/content/characters.js'), 'utf8');
+const deploymentSource = await fs.readFile(path.join(root, 'src/game/deployment-system.js'), 'utf8');
 const directorSource = await fs.readFile(path.join(root, 'src/game/director-system.js'), 'utf8');
 const rendererSource = await fs.readFile(path.join(root, 'src/render/world-renderer.js'), 'utf8');
 const navigationSource = await fs.readFile(path.join(root, 'src/game/navigation.js'), 'utf8');
-for (const expected of ['Sócrates', 'Zélia', 'Lia', 'Kindred']) {
-  if (!characterSource.includes(expected)) throw new Error(`Missing operative identity: ${expected}.`);
+for (const expected of ['Sócrates', 'Zélia', 'Lia', 'Chilindo']) {
+  if (!characterSource.includes(expected)) throw new Error(`Missing field character identity: ${expected}.`);
 }
-if (characterSource.includes('Caio Vilar')) throw new Error('Retired character name Caio Vilar must not return.');
+for (const retired of ['Caio Vilar', "name: 'Kindred'"]) {
+  if (characterSource.includes(retired)) throw new Error(`Retired character identity must not return: ${retired}.`);
+}
 if (!mainSource.includes("headquarters.open()")) throw new Error('Headquarters must remain the primary startup loop.');
+if (!mainSource.includes('DeploymentBuilder')) throw new Error('Multiplayer deployment builder must remain wired into startup.');
+for (const expected of ['two-player', 'four-player', 'compositionRule']) {
+  if (!deploymentSource.includes(expected)) throw new Error(`Deployment contract missing: ${expected}.`);
+}
 for (const expected of ['seizeHighestRecovered', 'relocateEnemy', 'extractionLocked']) {
   if (!directorSource.includes(expected)) throw new Error(`Major process behavior missing: ${expected}.`);
 }
