@@ -58,7 +58,7 @@
       "consequences": {
         "residentTrust": -3,
         "dialogueFacts": ["medicine_taken"],
-        "arenaModifiers": ["resident援助_unavailable"]
+        "arenaModifiers": ["resident_aid_unavailable"]
       }
     },
     {
