@@ -1,7 +1,16 @@
 import * as THREE from 'three';
 import { ROOM_SKINS } from '../content/room-skins.js';
 import { buildPortal, buildRoomLayer } from './scene-factory.js';
-import { enemyMesh, lootMesh, playerMesh, projectileMesh, pulseMesh } from './entity-factory.js';
+import {
+  enemyMesh,
+  enemyProjectileMesh,
+  hazardMesh,
+  lootMesh,
+  playerMesh,
+  projectileMesh,
+  pulseMesh,
+  shrineMesh,
+} from './entity-factory.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -32,7 +41,8 @@ export class WorldRenderer {
     this.interlaceWorld = new THREE.Group();
     this.entityLayer = new THREE.Group();
     this.effectLayer = new THREE.Group();
-    this.scene.add(this.world, this.interlaceWorld, this.entityLayer, this.effectLayer);
+    this.hazardLayer = new THREE.Group();
+    this.scene.add(this.world, this.interlaceWorld, this.hazardLayer, this.entityLayer, this.effectLayer);
     this.interlaceWorld.visible = false;
     this.playerMesh = null;
     this.portalMesh = null;
@@ -69,6 +79,7 @@ export class WorldRenderer {
   resetEntities() {
     this.entityLayer.clear();
     this.effectLayer.clear();
+    this.hazardLayer.clear();
     this.playerMesh = null;
   }
 
@@ -98,8 +109,8 @@ export class WorldRenderer {
     this.playerMesh.children[1].material.color.setHex(color);
   }
 
-  createEnemy(position, elite, interlaced) {
-    const mesh = enemyMesh(position, elite, interlaced);
+  createEnemy(position, elite, interlaced, archetype = 'pursuer') {
+    const mesh = enemyMesh(position, elite, interlaced, archetype);
     this.entityLayer.add(mesh);
     return mesh;
   }
@@ -110,9 +121,27 @@ export class WorldRenderer {
     return mesh;
   }
 
+  createEnemyProjectile(position, color, large = false) {
+    const mesh = enemyProjectileMesh(position, color, large);
+    this.effectLayer.add(mesh);
+    return mesh;
+  }
+
   createLoot(position, color) {
     const mesh = lootMesh(position, color);
     this.entityLayer.add(mesh);
+    return mesh;
+  }
+
+  createShrine(position, color) {
+    const mesh = shrineMesh(position, color);
+    this.entityLayer.add(mesh);
+    return mesh;
+  }
+
+  createHazard(position, color, radius) {
+    const mesh = hazardMesh(position, color, radius);
+    this.hazardLayer.add(mesh);
     return mesh;
   }
 
