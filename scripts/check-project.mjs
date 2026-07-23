@@ -32,6 +32,7 @@ const required = [
   'src/game/mission-system.js',
   'src/game/director-system.js',
   'src/game/deployment-system.js',
+  'src/game/activity-authority.js',
   'src/game/progression-system.js',
   'src/game/archive-system.js',
   'src/ui/minimap.js',
@@ -40,6 +41,7 @@ const required = [
   'src/ui/processes.css',
   'src/ui/deployment-builder.js',
   'src/ui/deployment-builder.css',
+  'docs/PLAYER_ACTIVITY_AUTHORITY.md',
   'public/assets/ui/instituto-travessia-seal.svg',
   'public/assets/ui/chave-geral-audit-mark.svg',
   'public/maps/abrir-001.json',
@@ -83,6 +85,8 @@ if (new Set(INSTITUTE_UPGRADES.map((upgrade) => upgrade.id)).size !== INSTITUTE_
 const mainSource = await fs.readFile(path.join(root, 'src/main.js'), 'utf8');
 const characterSource = await fs.readFile(path.join(root, 'src/content/characters.js'), 'utf8');
 const deploymentSource = await fs.readFile(path.join(root, 'src/game/deployment-system.js'), 'utf8');
+const activitySource = await fs.readFile(path.join(root, 'src/game/activity-authority.js'), 'utf8');
+const missionSource = await fs.readFile(path.join(root, 'src/game/mission-system.js'), 'utf8');
 const directorSource = await fs.readFile(path.join(root, 'src/game/director-system.js'), 'utf8');
 const rendererSource = await fs.readFile(path.join(root, 'src/render/world-renderer.js'), 'utf8');
 const navigationSource = await fs.readFile(path.join(root, 'src/game/navigation.js'), 'utf8');
@@ -97,6 +101,11 @@ if (!mainSource.includes('DeploymentBuilder')) throw new Error('Multiplayer depl
 for (const expected of ['two-player', 'four-player', 'compositionRule']) {
   if (!deploymentSource.includes(expected)) throw new Error(`Deployment contract missing: ${expected}.`);
 }
+for (const expected of ['loot', 'talk', 'card-battle', 'route', 'extract']) {
+  if (!activitySource.includes(expected)) throw new Error(`Activity authority missing: ${expected}.`);
+}
+if (!missionSource.includes('ActivityAuthority')) throw new Error('Mission interactions must route through activity authority.');
+if (!missionSource.includes('recoveredByPlayerId')) throw new Error('Recovered objects must remember the acting player.');
 for (const expected of ['seizeHighestRecovered', 'relocateEnemy', 'extractionLocked']) {
   if (!directorSource.includes(expected)) throw new Error(`Major process behavior missing: ${expected}.`);
 }
