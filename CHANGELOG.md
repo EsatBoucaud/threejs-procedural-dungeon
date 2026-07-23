@@ -1,6 +1,27 @@
 # Changelog
 
-## Unreleased — Instituto Travessia headquarters
+## Unreleased — Route-specific Chave Geral processes
+
+### Added
+
+- Four route-assigned major processes: The Auditor, The Seizure Chief, The Route Runner, and The Warden.
+- Distinct procedural silhouettes, health, movement, attacks, spawn conditions, and defeat feedback for each process.
+- Active field confiscation and recovered-manifest reduction for The Seizure Chief.
+- Overlap and bridge relocation behavior for The Route Runner.
+- Return-passage lockdown for The Warden.
+- Route-board process warnings before authorization.
+- Personalized hostile-intervention contracts compatible with every process.
+- Persistent total and per-process defeat statistics.
+- Route/process compatibility checks in CI.
+
+### Changed
+
+- Major encounter selection now comes from route data instead of always using The Auditor.
+- Unresolved major processes can affect extraction, threshold seizure, debrief, contract completion, and headquarters filing.
+- Auditor-specific permanent permissions now apply only when The Auditor is the assigned response.
+- Temporary antagonist geometry is explicitly tracked as systems-only placeholder material.
+
+## 0.3.0 — Instituto Travessia headquarters
 
 ### Added
 

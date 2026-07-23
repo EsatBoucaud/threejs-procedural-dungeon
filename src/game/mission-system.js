@@ -36,6 +36,7 @@ export class MissionSystem {
     ]);
     this.loot = [];
     this.recovered = [];
+    this.processSeized = [];
     this.shrines = [];
     this.currentRoom = null;
     this.lastRoom = null;
@@ -123,6 +124,7 @@ export class MissionSystem {
       vault: this.vaultCleared,
       remoteVault: this.remoteVaultCleared,
       overlaps: this.overlapsVisited.size,
+      processSeized: this.processSeized.length,
       ...extra,
     };
   }
@@ -178,6 +180,40 @@ export class MissionSystem {
     );
   }
 
+  seizeHighestRecovered(processId) {
+    if (this.recovered.length === 0) return null;
+    let targetIndex = 0;
+    let targetValue = -1;
+    for (let index = 0; index < this.recovered.length; index += 1) {
+      const item = this.recovered[index];
+      const value = item.value * (item.origin === 'interlace' ? this.remotePayoutMultiplier : 1);
+      if (value <= targetValue) continue;
+      targetValue = value;
+      targetIndex = index;
+    }
+    const [item] = this.recovered.splice(targetIndex, 1);
+    this.processSeized.push({ processId, item });
+    this.events.onLoot?.(this.recoveredValue);
+    this.reportProgress();
+    return item;
+  }
+
+  restoreProcessSeizure(processId) {
+    const restored = this.processSeized.filter((entry) => entry.processId === processId);
+    if (restored.length === 0) return [];
+    this.processSeized = this.processSeized.filter((entry) => entry.processId !== processId);
+    this.recovered.push(...restored.map((entry) => entry.item));
+    this.events.onLoot?.(this.recoveredValue);
+    this.reportProgress();
+    return restored.map((entry) => entry.item);
+  }
+
+  drainProcessSeizures() {
+    const items = this.processSeized.map((entry) => entry.item);
+    this.processSeized = [];
+    return items;
+  }
+
   interact(playerPosition) {
     const nearestLoot = this.loot
       .filter((entry) => !entry.collected)
@@ -213,7 +249,7 @@ export class MissionSystem {
     const entrance = this.rooms.get(this.mapState.entranceRoomId);
     const portalDistance = Math.hypot(playerPosition.x - entrance.x, playerPosition.z - entrance.z);
     if (portalDistance < 3.1) {
-      if (this.recovered.length === 0) {
+      if (this.recovered.length === 0 && this.processSeized.length === 0) {
         this.events.onFeed?.('Extraction refuses an empty manifest.', 'danger');
         return false;
       }

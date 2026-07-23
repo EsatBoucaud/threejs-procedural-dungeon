@@ -1,3 +1,4 @@
+import { processById } from '../content/chave-processes.js';
 import { FIELD_ROUTES } from '../content/routes.js';
 import { INSTITUTE_UPGRADES } from '../content/upgrades.js';
 import {
@@ -59,8 +60,11 @@ export class Headquarters {
     if (this.lastResult) {
       const remote = this.lastResult.remoteObjects ?? 0;
       const held = this.lastResult.archiveRecord?.held?.length ?? 0;
+      const processResult = this.lastResult.majorProcessName
+        ? ` · ${this.lastResult.majorProcessName} ${this.lastResult.majorProcessDefeated ? 'terminated' : 'unresolved'}`
+        : '';
       this.setStatus(
-        `Last filing: ${this.lastResult.contractComplete ? 'contract satisfied' : 'contract incomplete'} · ${remote} remote object${remote === 1 ? '' : 's'} · ${held} retained by the Institute.`,
+        `Last filing: ${this.lastResult.contractComplete ? 'contract satisfied' : 'contract incomplete'} · ${remote} remote object${remote === 1 ? '' : 's'} · ${held} retained by the Institute${processResult}.`,
         this.lastResult.success ? 'good' : 'danger',
       );
     } else {
@@ -79,7 +83,7 @@ export class Headquarters {
       <div>
         <span class="eyebrow">${rankTitle(profile.rank)}</span>
         <h2>${currency(profile.scrip)} FIELD SCRIP</h2>
-        <p>${profile.successfulRuns} successful / ${profile.failedRuns} failed traversals · ${profile.remoteObjects} remote objects · ${profile.statistics.auditorsDefeated} auditors removed</p>
+        <p>${profile.successfulRuns} successful / ${profile.failedRuns} failed traversals · ${profile.remoteObjects} remote objects · ${profile.statistics.majorProcessesDefeated} major processes removed</p>
       </div>
       <div class="hq-profile-grid">
         <span><b>${summary.stored}</b> stored</span>
@@ -93,12 +97,18 @@ export class Headquarters {
   renderRoutes(profile) {
     this.routesNode.replaceChildren();
     for (const route of FIELD_ROUTES) {
+      const process = processById(route.chaveProcess);
       const card = document.createElement('article');
       card.className = 'route-card';
       card.innerHTML = `
         <span class="eyebrow">${route.region}</span>
         <h3>${route.name}</h3>
         <p>${route.description}</p>
+        <div class="route-process">
+          <span>A CHAVE GERAL RESPONSE</span>
+          <strong>${process.name}</strong>
+          <small>${process.role}</small>
+        </div>
         <div class="route-stats">
           <span>RISK <b>${riskMarks(route.risk)}</b></span>
           <span>${route.roomCount} LOCAL ROOMS</span>

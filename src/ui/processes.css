@@ -1,0 +1,35 @@
+.route-process {
+  margin: 0 0 12px;
+  padding: 9px 10px;
+  border-left: 2px solid #bd6255;
+  background: linear-gradient(90deg, rgba(189, 98, 85, .1), rgba(255,255,255,.018));
+}
+
+.route-process span,
+.route-process small {
+  display: block;
+  color: #8993a0;
+  font-size: 7px;
+  letter-spacing: .14em;
+}
+
+.route-process strong {
+  display: block;
+  margin: 3px 0;
+  color: #e6c77e;
+  font: 700 14px Georgia, serif;
+  letter-spacing: .05em;
+}
+
+.route-card:nth-child(2n) .route-process { border-left-color: #6bafe0; }
+.route-card:nth-child(3n) .route-process { border-left-color: #9c79d6; }
+
+#boss-banner.visible {
+  background:
+    linear-gradient(90deg, rgba(155, 55, 52, .18), transparent 35%, rgba(208, 172, 94, .08)),
+    linear-gradient(145deg, rgba(7,11,18,.97), rgba(16,20,29,.88));
+}
+
+.interlaced #boss-banner.visible {
+  box-shadow: 0 18px 70px rgba(0,0,0,.52), 0 0 48px rgba(164, 83, 179, .16);
+}

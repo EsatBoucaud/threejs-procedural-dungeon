@@ -1,3 +1,5 @@
+import { processById } from './chave-processes.js';
+
 const CONTRACTS = [
   {
     id: 'deep-claim',
@@ -40,9 +42,9 @@ const CONTRACTS = [
     riskMultiplier: 1.42,
   },
   {
-    id: 'hostile-audit',
-    title: 'HOSTILE AUDIT',
-    description: 'Clear the critical route, enter the remote graph, and terminate the Chave Geral audit process.',
+    id: 'hostile-intervention',
+    title: 'HOSTILE INTERVENTION',
+    description: 'Clear the critical route, enter the remote graph, and terminate the assigned Chave Geral major process.',
     requirements: {
       objects: 3,
       remoteObjects: 1,
@@ -51,7 +53,7 @@ const CONTRACTS = [
       remoteRooms: 2,
       vault: true,
       interlace: true,
-      auditor: true,
+      majorProcess: true,
     },
     bonus: 560,
     riskMultiplier: 1.58,
@@ -90,8 +92,19 @@ const CONTRACTS = [
   },
 ];
 
-export function contractForSeed(seed) {
-  return structuredClone(CONTRACTS[Math.abs(seed >>> 0) % CONTRACTS.length]);
+function personalizeHostileContract(contract, processId) {
+  if (contract.id !== 'hostile-intervention') return contract;
+  const process = processById(processId);
+  contract.title = process.id === 'auditor' ? 'HOSTILE AUDIT' : `TERMINATE ${process.name}`;
+  contract.description = `Clear the critical route, enter the remote graph, and terminate ${process.name}, A Chave Geral's ${process.role.toLowerCase()} process.`;
+  contract.majorProcessId = process.id;
+  contract.majorProcessName = process.name;
+  return contract;
+}
+
+export function contractForSeed(seed, processId = 'auditor') {
+  const contract = structuredClone(CONTRACTS[Math.abs(seed >>> 0) % CONTRACTS.length]);
+  return personalizeHostileContract(contract, processId);
 }
 
 export function contractProgress(contract, snapshot) {
@@ -125,6 +138,13 @@ export function contractProgress(contract, snapshot) {
   if (req.vault) checks.push({ id: 'vault', label: 'Local vault stabilized', complete: snapshot.vault });
   if (req.remoteVault) checks.push({ id: 'remote-vault', label: 'Remote vault stabilized', complete: snapshot.remoteVault });
   if (req.interlace) checks.push({ id: 'interlace', label: 'Interlace survived', complete: snapshot.interlace });
+  if (req.majorProcess) {
+    checks.push({
+      id: 'major-process',
+      label: `${contract.majorProcessName ?? 'Major process'} terminated`,
+      complete: snapshot.majorProcess,
+    });
+  }
   if (req.auditor) checks.push({ id: 'auditor', label: 'Auditor terminated', complete: snapshot.auditor });
   return {
     checks,
