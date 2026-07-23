@@ -4,37 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#07080d" />
-    <meta name="description" content="A deterministic procedural dungeon generator you can watch build itself, room by room. Scatter → separate → Delaunay → MST + loops → carve → theme, rendered live with Three.js." />
-    <title>Dungeon Forge — Procedural Dungeon Generator</title>
+    <meta name="description" content="ABRIR's deterministic Three.js map forge: generate reproducible room graphs, save them as versioned game states, and load them into the gameplay runtime." />
+    <title>ABRIR Map Forge — Three.js Procedural Generator</title>
 
-    <meta name="author" content="Majid Manzarpour" />
-    <link rel="author" href="https://x.com/majidmanzarpour" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%B0%3C/text%3E%3C/svg%3E" />
+    <meta name="author" content="Esat Boucaud" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%9D%EF%B8%8F%3C/text%3E%3C/svg%3E" />
 
-    <!-- Social share (Open Graph + Twitter) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Dungeon Forge — Procedural Dungeon Generator" />
-    <meta property="og:description" content="Watch a dungeon build itself, room by room — scatter, separate, triangulate, carve, theme. A deterministic procgen core rendered live with Three.js." />
-    <meta property="og:url" content="https://procedural-dungeon.netlify.app/" />
-    <meta property="og:image" content="https://procedural-dungeon.netlify.app/og.jpg" />
+    <meta property="og:title" content="ABRIR Map Forge" />
+    <meta property="og:description" content="A deterministic Three.js procedural map pipeline for the ABRIR game MVP." />
+    <meta property="og:image" content="./og.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A procedurally generated dungeon of glowing rooms and corridors seen from above in a moody, ember-lit world." />
+    <meta property="og:image:alt" content="A procedurally generated map of glowing rooms and corridors seen from above." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Dungeon Forge — Procedural Dungeon Generator" />
-    <meta name="twitter:description" content="Watch a dungeon build itself, room by room — scatter, separate, triangulate, carve, theme. A deterministic procgen core rendered live with Three.js." />
-    <meta name="twitter:image" content="https://procedural-dungeon.netlify.app/og.jpg" />
-    <meta name="twitter:site" content="@majidmanzarpour" />
-    <meta name="twitter:creator" content="@majidmanzarpour" />
 
     <link rel="stylesheet" href="./src/ui/styles.css" />
   </head>
   <body>
-    <!-- control + telemetry panel -->
     <div id="panel">
       <button id="collapse" aria-label="Collapse panel" title="Collapse">–</button>
       <div class="head">
-        <div class="brand"><span>DUNGEON&nbsp;FORGE</span><span>procgen&nbsp;core</span></div>
+        <div class="brand"><span>ABRIR&nbsp;MAP&nbsp;FORGE</span><span>Three.js&nbsp;procgen&nbsp;core</span></div>
         <h1 id="dname">—</h1>
         <div id="dsub">forging…</div>
       </div>
@@ -53,6 +44,7 @@
           </label>
         </div>
         <button class="btn primary" id="forge" style="width:100%;margin-top:10px">FORGE&nbsp;DUNGEON</button>
+        <a class="btn" href="./game.html" style="display:block;width:100%;margin-top:8px;text-align:center;text-decoration:none">OPEN&nbsp;SAVED&nbsp;MAP&nbsp;TEST</a>
       </div>
 
       <div class="sec">
