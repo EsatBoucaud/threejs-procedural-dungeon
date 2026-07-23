@@ -8,7 +8,7 @@ ABRIR is being developed on the `abrir-mvp` branch of the existing Three.js proc
 
 The inherited generator provides deterministic seeded layouts, connected room graphs, semantic room roles, tile grids, props, spawns, difficulty depth, and Three.js rendering.
 
-The gameplay runtime loads a saved map snapshot independently from the forge and uses generated room semantics for traversal, combat activation, room locking, and objective placement.
+The gameplay runtime loads a saved map snapshot independently from the forge and uses generated room semantics for traversal, room-mode dispatch, combat activation, room locking, objective placement, extraction, and interlacing.
 
 ## MVP definition
 
@@ -17,7 +17,8 @@ The first playable slice is a short single-player run with:
 - one ranged operative and one melee operative;
 - spatial exploration and instant switching between the pair;
 - one generated map state loaded from a saved JSON file;
-- turn-based card combat inside generated hostile rooms;
+- real-time action combat in one room type;
+- turn-based card combat in another room type;
 - one night/interlacing escalation event;
 - one extraction decision and post-run result screen.
 
@@ -47,20 +48,22 @@ Implemented pipeline:
 - [x] GitHub Actions regenerate, validate, and build the saved-map runtime.
 - [x] Separate `game.html` runtime reconstructs the saved floor, walls, pools, room semantics, and entrance.
 - [x] Two-operative exploration pair with active switching and partner follow.
-- [x] Generated combat room activation and visible room barriers.
-- [x] Real-time combat experiment removed in favor of the intended turn-based card system.
-- [x] Three-lane combat layout added inside the generated room.
-- [x] Deterministic draw pile, discard pile, five-card hand, and 3-Time turn economy.
-- [x] Enemy intents, Block, Weak, Restrain, healing, card draw, lane movement, and End Turn resolution.
-- [x] Sócrates and Zélia receive distinct card identities while sharing neutral tactical cards.
-- [x] Chrome-heavy combat HUD follows the supplied card-combat composition.
-- [x] Interlacing affects room treatment, hostile count, elite presence, damage, and provisional recovered value.
-- [x] CI passes on the card-combat implementation.
+- [x] Generated rooms dispatch different combat modes.
+- [x] Real-time skirmish room with aiming, ranged projectiles, melee arcs, secondary abilities, dodge, cooldowns, pursuit enemies, contact attacks, incapacitation, partner follow, and room-clear state.
+- [x] Three-lane card-combat room with deterministic draw pile, discard pile, five-card hand, and 3-Time turn economy.
+- [x] Card enemy intents, Block, Weak, Restrain, healing, card draw, lane movement, and End Turn resolution.
+- [x] Sócrates and Zélia share health across exploration, real-time combat, and card combat.
+- [x] Chrome-heavy interfaces support both supplied UI directions.
+- [x] Both encounters expose separate recovered objects with shared run value.
+- [x] Returning to the generated entrance opens an Extract-or-Stay decision.
+- [x] Staying interlaces and reopens the tactical card room with an elite encounter.
+- [x] Extraction produces a run report with recovered value, 15% Instituto Travessia retention, and secured value.
+- [x] CI passes on the dual-combat implementation.
 - [ ] Extract procedural generation from renderer-heavy `src/main.js` into a clean reusable module.
 - [ ] Add browser-side export/download controls to the visual forge.
 - [ ] Replace primitive operative geometry and portrait blocks with supplied character assets.
-- [ ] Add extraction and post-run results.
-- [ ] Turn manual interlacing into a timed extract-or-stay escalation.
+- [ ] Replace placeholder room-mode selection with authored encounter data in the saved map overlay.
+- [ ] Add sound, hit timing, combat animation, and card illustration assets.
 
 ## Current test map
 
@@ -75,12 +78,23 @@ Implemented pipeline:
 
 The fantasy-facing theme is still inherited placeholder dressing. ABRIR environment art and naming will replace it without changing the proven topology pipeline.
 
+## Current run
+
+1. Start at the generated entrance.
+2. Enter the shallow marked combat room for real-time action combat.
+3. Enter the deeper marked room for card combat.
+4. Recover both objects.
+5. Return to the entrance.
+6. Extract immediately or stay after night.
+7. Staying activates interlacing and reopens the tactical room with an elite card encounter.
+8. Return and extract to receive the run report.
+
 ## Immediate next task
 
-Complete the first run loop after card combat:
+Move encounter type and reward rules out of `src/game/main.js` and into the saved map's `gameplay` overlay so each generated room explicitly declares:
 
-1. designate the generated entrance as the initial extraction point;
-2. require the pair to carry the recovered core fragment back through the map;
-3. offer extract-or-stay on return;
-4. make staying trigger timed interlacing and a harder second card encounter;
-5. show a compact post-run result screen with retained and lost value.
+- encounter mode: exploration, real-time, card, dialogue, or objective;
+- encounter recipe;
+- reward table;
+- interlacing transformation;
+- extraction eligibility.
