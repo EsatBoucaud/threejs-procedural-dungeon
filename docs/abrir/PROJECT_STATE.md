@@ -8,16 +8,16 @@ ABRIR is being developed on the `abrir-mvp` branch of the existing Three.js proc
 
 The inherited generator provides deterministic seeded layouts, connected room graphs, semantic room roles, tile grids, props, spawns, difficulty depth, and Three.js rendering.
 
-The gameplay runtime now loads a saved map snapshot independently from the forge and uses generated room semantics for traversal, combat activation, room locking, and loot placement.
+The gameplay runtime loads a saved map snapshot independently from the forge and uses generated room semantics for traversal, combat activation, room locking, and objective placement.
 
 ## MVP definition
 
 The first playable slice is a short single-player run with:
 
 - one ranged operative and one melee operative;
-- instant switching between the pair;
+- spatial exploration and instant switching between the pair;
 - one generated map state loaded from a saved JSON file;
-- authored combat and loot rules applied on top of generated room semantics;
+- turn-based card combat inside generated hostile rooms;
 - one night/interlacing escalation event;
 - one extraction decision and post-run result screen.
 
@@ -44,15 +44,18 @@ Implemented pipeline:
 - [x] Deterministic Node generation bridge added without duplicating the algorithm.
 - [x] First generation recipe added: seed `20260723`, 24 rooms, Ancient theme.
 - [x] First generated ABRIR map committed as a versioned JSON snapshot.
-- [x] GitHub Actions regenerate and validate the saved map when its source changes.
-- [x] Separate `game.html` runtime loads the saved state and reconstructs its floor, walls, pools, semantic rooms, and entrance.
-- [x] Two-operative grey-box pair with switching and partner follow.
-- [x] Ranged projectile attack and melee arc attack.
-- [x] Secondary healing and area-damage abilities.
-- [x] Dodge, health, contact damage, incapacitation, and test restart.
-- [x] Generated combat room activation, visible room barriers, enemy wave, room-clear state, and loot pickup.
-- [x] Combat HUD reshaped around the intended illustrated UI composition rather than a generic developer overlay.
-- [x] Manual interlacing test affects lighting, floor treatment, enemy speed, damage, and recovered value.
+- [x] GitHub Actions regenerate, validate, and build the saved-map runtime.
+- [x] Separate `game.html` runtime reconstructs the saved floor, walls, pools, room semantics, and entrance.
+- [x] Two-operative exploration pair with active switching and partner follow.
+- [x] Generated combat room activation and visible room barriers.
+- [x] Real-time combat experiment removed in favor of the intended turn-based card system.
+- [x] Three-lane combat layout added inside the generated room.
+- [x] Deterministic draw pile, discard pile, five-card hand, and 3-Time turn economy.
+- [x] Enemy intents, Block, Weak, Restrain, healing, card draw, lane movement, and End Turn resolution.
+- [x] Sócrates and Zélia receive distinct card identities while sharing neutral tactical cards.
+- [x] Chrome-heavy combat HUD follows the supplied card-combat composition.
+- [x] Interlacing affects room treatment, hostile count, elite presence, damage, and provisional recovered value.
+- [x] CI passes on the card-combat implementation.
 - [ ] Extract procedural generation from renderer-heavy `src/main.js` into a clean reusable module.
 - [ ] Add browser-side export/download controls to the visual forge.
 - [ ] Replace primitive operative geometry and portrait blocks with supplied character assets.
@@ -74,10 +77,10 @@ The fantasy-facing theme is still inherited placeholder dressing. ABRIR environm
 
 ## Immediate next task
 
-Complete the first run loop after combat:
+Complete the first run loop after card combat:
 
 1. designate the generated entrance as the initial extraction point;
-2. require the pair to carry recovered value back through the map;
+2. require the pair to carry the recovered core fragment back through the map;
 3. offer extract-or-stay on return;
-4. make staying trigger timed interlacing and a harder second encounter;
+4. make staying trigger timed interlacing and a harder second card encounter;
 5. show a compact post-run result screen with retained and lost value.
