@@ -152,8 +152,9 @@ export class DeploymentBuilder {
       </div>
 
       <div class="composition-notice">
-        <strong>COMBAT COMPOSITION IS PLAYER-CHOSEN.</strong>
-        <span>${summary.melee ?? 0} melee / ${summary.ranged ?? 0} ranged selected. Duplicate kits are allowed; no balance rule is enforced.</span>
+        <strong>PLAYERS DECIDE WHO DOES THE WORK.</strong>
+        <span>Any assigned player may loot, inspect, talk, card battle, negotiate, puzzle, revive, activate systems, or propose route decisions. No activity belongs to a fixed character role.</span>
+        <span>${summary.melee ?? 0} melee / ${summary.ranged ?? 0} ranged selected. Duplicate kits are allowed; combat balance is also player-chosen.</span>
       </div>
 
       <div class="deployment-players">${playerGroups}</div>
