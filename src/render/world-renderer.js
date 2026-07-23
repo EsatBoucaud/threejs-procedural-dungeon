@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { ROOM_SKINS } from '../content/room-skins.js';
+import { skinForRoute } from '../content/room-skins.js';
+import { deriveMapLayout } from '../core/room-layout.js';
 import { buildInterlaceFeatures, buildPortal, buildRoomLayer } from './scene-factory.js';
 import {
   enemyMesh,
@@ -46,6 +47,9 @@ export class WorldRenderer {
     this.interlaceWorld.visible = false;
     this.playerMesh = null;
     this.portalMesh = null;
+    this.layout = null;
+    this.localSkin = null;
+    this.remoteSkin = null;
 
     this.installLights();
     this.resize();
@@ -53,7 +57,8 @@ export class WorldRenderer {
   }
 
   installLights() {
-    this.scene.add(new THREE.HemisphereLight(0x9eb8c8, 0x110d0a, 1.35));
+    this.hemisphere = new THREE.HemisphereLight(0x9eb8c8, 0x110d0a, 1.35);
+    this.scene.add(this.hemisphere);
     const key = new THREE.DirectionalLight(0xffe3b8, 2.4);
     key.position.set(18, 34, 12);
     key.castShadow = true;
@@ -87,23 +92,36 @@ export class WorldRenderer {
     this.world.clear();
     this.interlaceWorld.clear();
     this.interlaceWorld.visible = false;
-    this.scene.fog.color.setHex(0x071018);
-    buildRoomLayer(this.world, state.rooms, state.connections, ROOM_SKINS.travessia, false);
+    this.layout = deriveMapLayout(state);
+    this.localSkin = skinForRoute(state.route?.id, false);
+    this.remoteSkin = skinForRoute(state.route?.id, true);
+    this.scene.fog.color.setHex(this.localSkin.fog);
+    this.hemisphere.color.setHex(this.localSkin.ambient);
+
+    buildRoomLayer(
+      this.world,
+      state.rooms,
+      state.connections,
+      this.localSkin,
+      false,
+      this.layout.local,
+    );
     buildRoomLayer(
       this.interlaceWorld,
       state.interlace.rooms,
       state.interlace.connections ?? [],
-      ROOM_SKINS.interlace,
+      this.remoteSkin,
       true,
+      this.layout.remote,
     );
     buildInterlaceFeatures(
       this.interlaceWorld,
       state.interlace.overlaps ?? [],
       state.interlace.bridges ?? [],
-      ROOM_SKINS.interlace,
+      this.remoteSkin,
     );
     const entrance = state.rooms.find((room) => room.id === state.entranceRoomId);
-    this.portalMesh = buildPortal(entrance, ROOM_SKINS.travessia);
+    this.portalMesh = buildPortal(entrance, this.localSkin);
     this.world.add(this.portalMesh);
   }
 
@@ -169,7 +187,8 @@ export class WorldRenderer {
 
   showInterlace() {
     this.interlaceWorld.visible = true;
-    this.scene.fog.color.setHex(0x0d0817);
+    this.scene.fog.color.setHex(this.remoteSkin?.fog ?? 0x0d0817);
+    this.hemisphere.color.lerp(new THREE.Color(this.remoteSkin?.ambient ?? 0x7c87aa), 0.35);
   }
 
   screenToWorld(clientX, clientY) {
