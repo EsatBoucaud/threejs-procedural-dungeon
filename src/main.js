@@ -1,11 +1,19 @@
 import './ui/styles.css';
 import './ui/headquarters.css';
 import './ui/processes.css';
+import './ui/deployment-builder.css';
+import { applyDeployment } from './content/characters.js';
 import { seedForRoute } from './content/routes.js';
 import { generateMapState, validateMapState } from './core/dungeon-generator.js';
+import {
+  createDefaultDeployment,
+  normalizeDeployment,
+  validateDeployment,
+} from './game/deployment-system.js';
 import { RunController } from './game/run-controller.js';
 import { loadProfile, rankTitle } from './game/progression-system.js';
 import { WorldRenderer } from './render/world-renderer.js';
+import { DeploymentBuilder } from './ui/deployment-builder.js';
 import { Headquarters } from './ui/headquarters.js';
 import { Minimap } from './ui/minimap.js';
 
@@ -15,6 +23,7 @@ const elements = {
   briefing: document.querySelector('#briefing'),
   debrief: document.querySelector('#debrief'),
   headquarters: document.querySelector('#headquarters'),
+  deployment: document.querySelector('#deployment-builder'),
   begin: document.querySelector('#begin-button'),
   restart: document.querySelector('#restart-button'),
   export: document.querySelector('#export-button'),
@@ -71,10 +80,18 @@ let started = false;
 let previousTime = performance.now();
 let lastResult = null;
 let pendingRoute = null;
+let pendingDeployment = createDefaultDeployment('two-player');
 
 const headquarters = new Headquarters(elements.headquarters, {
   onDeploy: (route) => deployRoute(route),
   onProfileChange: (profile) => updateProfile(profile),
+});
+
+const deploymentBuilder = new DeploymentBuilder(elements.deployment, {
+  onChange: (deployment, validation) => {
+    pendingDeployment = deployment;
+    elements.begin.disabled = !validation.valid;
+  },
 });
 
 function formatCurrency(value) {
@@ -109,7 +126,7 @@ function updateOperative(operative, health, maxHealth) {
   elements.operativeName.textContent = operative.name;
   elements.operativeMark.textContent = operative.mark;
   elements.operativeMark.style.setProperty('--operative-color', `#${operative.color.toString(16).padStart(6, '0')}`);
-  elements.kit.textContent = operative.role;
+  elements.kit.textContent = `${operative.kitName ?? operative.role} // ${operative.combatFamily?.toUpperCase() ?? ''}`;
   elements.health.style.width = `${Math.max(0, (health / maxHealth) * 100)}%`;
 }
 
@@ -120,7 +137,11 @@ function renderTeam(team) {
     card.className = `team-member${operative.active ? ' active' : ''}${operative.health <= 0 ? ' down' : ''}`;
     card.innerHTML = `
       <b>${operative.mark}</b>
-      <span><strong>${operative.name}</strong><i><em style="width:${Math.max(0, operative.health / operative.maxHealth * 100)}%"></em></i></span>
+      <span>
+        <strong>${operative.name}</strong>
+        <small>${operative.kitName ?? operative.role}</small>
+        <i><em style="width:${Math.max(0, operative.health / operative.maxHealth * 100)}%"></em></i>
+      </span>
     `;
     elements.team.append(card);
   }
@@ -226,14 +247,19 @@ async function loadInitialMap() {
   }
 }
 
-function installRun(state) {
+function installRun(state, deployment = state.deployment ?? pendingDeployment) {
+  const normalizedDeployment = normalizeDeployment(deployment);
+  state.deployment = structuredClone(normalizedDeployment);
+  applyDeployment(normalizedDeployment);
+
   mapState = state;
   renderer.resetEntities();
   renderer.buildMap(state);
   minimap = new Minimap(elements.minimap, state);
   run = new RunController(renderer, state, createRunEvents());
   const routeLabel = state.route?.name ? `${state.route.name} // ` : '';
-  elements.seed.textContent = `${routeLabel}${state.seedLabel} ↔ ${state.interlace?.seedLabel ?? 'PENDING'}`;
+  const modeLabel = normalizedDeployment.mode === 'two-player' ? '2P' : '4P';
+  elements.seed.textContent = `${modeLabel} // ${routeLabel}${state.seedLabel} ↔ ${state.interlace?.seedLabel ?? 'PENDING'}`;
   elements.timer.style.color = '';
   elements.eventFeed.replaceChildren();
   elements.bossBanner.classList.remove('visible');
@@ -245,10 +271,21 @@ function installRun(state) {
 }
 
 function begin() {
+  const validation = validateDeployment(pendingDeployment);
+  if (!validation.valid) {
+    feed(validation.errors.join(' '), 'danger');
+    return;
+  }
+
+  pendingDeployment = validation.deployment;
+  installRun(mapState, pendingDeployment);
   started = true;
   elements.briefing.close();
   const routeName = pendingRoute?.name ?? mapState.route?.name ?? 'FIELD TEST';
-  feed(`${routeName}: passage opened. The safe-window clock is running.`, 'good');
+  const ownership = pendingDeployment.mode === 'two-player'
+    ? `${pendingDeployment.localPlayerId.toUpperCase()} controls two characters; Q swaps between that assigned pair.`
+    : `${pendingDeployment.localPlayerId.toUpperCase()} controls one character; the other three belong to the other players.`;
+  feed(`${routeName}: passage opened. ${ownership}`, 'good');
   pendingRoute = null;
 }
 
@@ -300,13 +337,17 @@ function deployRoute(route) {
   });
   state.route = structuredClone(route);
   pendingRoute = route;
-  installRun(state);
+  pendingDeployment = normalizeDeployment(pendingDeployment);
+  state.deployment = structuredClone(pendingDeployment);
+  deploymentBuilder.setDeployment(pendingDeployment);
+  elements.begin.disabled = !validateDeployment(pendingDeployment).valid;
+  installRun(state, pendingDeployment);
   started = false;
   elements.briefing.showModal();
 }
 
 function exportMap() {
-  const exportState = { ...mapState, contract: run?.contract };
+  const exportState = { ...mapState, contract: run?.contract, deployment: pendingDeployment };
   const blob = new Blob([`${JSON.stringify(exportState, null, 2)}\n`], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -327,7 +368,10 @@ window.addEventListener('keydown', (event) => {
   input.keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
   if (!started || event.repeat) return;
-  if (event.code === 'KeyQ') run.switchOperative();
+  if (event.code === 'KeyQ') {
+    if (run.teamSnapshot().length > 1) run.switchOperative();
+    else feed('Four-player ownership: this player has no reserve character to swap into.', '');
+  }
   if (event.code === 'KeyE') run.interact();
   if (event.code === 'KeyR') run.useAbility(input.aimWorld ?? run.player.position);
   if (event.code === 'Space') run.dodge(movementVector(), input.aimWorld);
@@ -365,6 +409,9 @@ function frame(time) {
 }
 
 mapState = await loadInitialMap();
-installRun(mapState);
+pendingDeployment = createDefaultDeployment('two-player');
+mapState.deployment = structuredClone(pendingDeployment);
+deploymentBuilder.setDeployment(pendingDeployment);
+installRun(mapState, pendingDeployment);
 headquarters.open();
 requestAnimationFrame(frame);
