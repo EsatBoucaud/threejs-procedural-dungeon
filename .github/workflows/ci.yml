@@ -18,6 +18,7 @@ jobs:
       - run: npm run check:generation
       - run: npm run check:headquarters
       - run: npm run check:processes
+      - run: npm run check:layout
       - run: npm run generate:map -- ABRIR-001 public/maps/abrir-001.json
       - run: npm run check
       - run: npm run build
