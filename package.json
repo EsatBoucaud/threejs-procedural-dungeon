@@ -1,9 +1,9 @@
 {
   "name": "abrir-game-prototype",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
-  "description": "ABRIR — deterministic Three.js action-looter with multiplayer ownership, player-chosen combat kits, and unrestricted field activity authority.",
+  "description": "ABRIR — deterministic multiplayer Three.js action-looter with player-owned characters and shared field interactions.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
@@ -15,6 +15,7 @@
     "check:layout": "node scripts/check-layout.mjs",
     "check:deployment": "node scripts/check-deployment.mjs",
     "check:activities": "node scripts/check-activity-authority.mjs",
+    "check:shared-interactions": "node scripts/check-shared-interactions.mjs",
     "generate:map": "node scripts/generate-map.mjs"
   },
   "dependencies": {
