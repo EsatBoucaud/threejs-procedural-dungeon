@@ -1,9 +1,9 @@
 {
   "name": "abrir-game-prototype",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
-  "description": "ABRIR — deterministic Three.js action-looter with independent interlaced states, Instituto Travessia headquarters, and route-specific Chave Geral encounters.",
+  "description": "ABRIR — deterministic Three.js action-looter with independent interlaced states, headquarters, route-specific major encounters, and generated tactical room architecture.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
@@ -12,6 +12,7 @@
     "check:generation": "node scripts/check-generation.mjs",
     "check:headquarters": "node scripts/check-headquarters.mjs",
     "check:processes": "node scripts/check-processes.mjs",
+    "check:layout": "node scripts/check-layout.mjs",
     "generate:map": "node scripts/generate-map.mjs"
   },
   "dependencies": {
