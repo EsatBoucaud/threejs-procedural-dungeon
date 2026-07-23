@@ -19,7 +19,8 @@
     "preview": "vite preview --port 4173",
     "generate:map": "node scripts/generate-abrir-map.mjs",
     "validate:maps": "node scripts/validate-map-states.mjs",
-    "check": "npm run generate:map && npm run validate:maps && npm run build"
+    "validate:search": "node scripts/validate-search-scenes.mjs",
+    "check": "npm run generate:map && npm run validate:maps && npm run validate:search && npm run build"
   },
   "dependencies": {
     "three": "^0.185.0"
