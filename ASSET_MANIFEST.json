@@ -44,9 +44,18 @@
       "path": "src/content/room-skins.js",
       "category": "procedural-material-kit",
       "status": "temporary-code-generated",
-      "usage": ["local-state", "remote-state"],
+      "usage": ["local-state", "remote-state", "six-route-palettes"],
       "replaceWhenFinalArtArrives": false,
-      "notes": "May remain as debug/fallback rendering after authored room modules arrive."
+      "notes": "Temporary route differentiation and debug fallback. These palettes are not finished cultural material studies."
+    },
+    {
+      "id": "generated-route-architecture",
+      "path": "src/core/room-layout.js",
+      "category": "procedural-environment-system",
+      "status": "temporary-code-generated",
+      "usage": ["door-openings", "room-modules", "tactical-cover", "collision", "projectile-cover"],
+      "replaceWhenFinalArtArrives": false,
+      "notes": "Shared deterministic architecture contract. Final authored meshes may replace the visual forms while preserving opening and collision records. Do not treat primitive prop shapes as positive environment-art references."
     }
   ],
   "missingFinalAssetGroups": [
@@ -58,7 +67,8 @@
     "final Seizure Chief model and confiscation effects",
     "final Route Runner model and route effects",
     "final Warden model and extraction-lock effects",
-    "location-specific room modules",
+    "authored location-specific room modules",
+    "researched route-specific materials and signage",
     "weapons and ability effects",
     "recoverable-object models and icons",
     "audio and music",
