@@ -8,6 +8,10 @@ function numberOf(value) {
   return hash >>> 0;
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 function sideFor(dx, dz) {
   if (Math.abs(dx) >= Math.abs(dz)) return dx >= 0 ? 'east' : 'west';
   return dz >= 0 ? 'south' : 'north';
@@ -73,10 +77,13 @@ function styleFor(room, profile, index) {
   if (room.type === 'vault') return index % 3 ? 'case' : 'pillar';
   if (room.type === 'treasure') return index ? 'case' : 'plinth';
   if (room.type === 'shrine') return 'table';
+  if (profile === 'municipal-archive') return index % 2 ? 'cabinet' : 'inspection';
   if (profile === 'transit') return index % 2 ? 'pylon' : 'barrier';
   if (profile === 'glass-office') return index % 2 ? 'cabinet' : 'desk';
+  if (profile === 'reliquary') return index % 2 ? 'case' : 'pillar';
   if (profile === 'weather') return index % 2 ? 'ballast' : 'instrument';
   if (profile === 'customs') return index % 2 ? 'case' : 'inspection';
+  if (profile === 'remote-fracture') return index % 2 ? 'pylon' : 'cover';
   return index % 2 ? 'pylon' : 'cover';
 }
 
@@ -106,8 +113,10 @@ function deriveObstacles(rooms, seed, profile, densityBonus) {
       const swap = Math.abs(Math.sin(rotation)) > 0.5;
       const collisionWidth = swap ? depth : width;
       const collisionDepth = swap ? width : depth;
-      const x = room.x + nx * room.width;
-      const z = room.z + nz * room.depth;
+      const maxOffsetX = Math.max(0, room.width / 2 - collisionWidth / 2 - 0.45);
+      const maxOffsetZ = Math.max(0, room.depth / 2 - collisionDepth / 2 - 0.45);
+      const x = room.x + clamp(nx * room.width, -maxOffsetX, maxOffsetX);
+      const z = room.z + clamp(nz * room.depth, -maxOffsetZ, maxOffsetZ);
       obstacles.push({
         id: `${room.id}:obstacle:${index}`,
         roomId: room.id,
