@@ -40,6 +40,7 @@ export class RunController {
     this.elapsed = 0;
     this.finished = false;
     this.interlaceTriggered = false;
+    this.seizedAtExtraction = [];
     this.isWalkable = createWalkability(mapState, () => this.interlaceTriggered);
 
     this.combat = new CombatSystem(renderer, {
@@ -136,6 +137,31 @@ export class RunController {
     }
   }
 
+  spawnRemoteEnemies() {
+    for (const room of this.mapState.interlace?.rooms ?? []) {
+      let count = 0;
+      if (room.type === 'combat') count = 2 + ((room.localId ?? 0) % 2);
+      if (room.type === 'archive' || room.type === 'treasure') count = 2;
+      if (room.type === 'elite') count = 4;
+      if (room.type === 'vault') count = 6;
+      if (room.type === 'breach' || room.type === 'shrine') count = 0;
+      for (let index = 0; index < count; index += 1) {
+        const localId = room.localId ?? index;
+        const angle = ((index + 1) / (count + 1)) * Math.PI * 2 + localId * 0.57;
+        const radius = Math.min(room.width, room.depth) * (0.16 + (index % 3) * 0.055);
+        this.combat.spawnEnemy({
+          x: room.x + Math.cos(angle) * radius,
+          z: room.z + Math.sin(angle) * radius,
+          roomId: room.id,
+          elite: room.type === 'elite' || room.type === 'vault',
+          interlaced: true,
+          difficulty: Math.min(1, room.difficulty + 0.12),
+          archetype: index % 3 === 2 ? 'gunner' : 'pursuer',
+        });
+      }
+    }
+  }
+
   switchOperative() {
     if (this.finished) return;
     const fallen = this.healthByOperative.map((health) => health <= 0);
@@ -193,7 +219,28 @@ export class RunController {
 
   interact() {
     if (this.finished) return;
-    if (this.mission.interact(this.player.position)) this.finish(true);
+    if (this.mission.interact(this.player.position)) this.attemptExtraction();
+  }
+
+  attemptExtraction() {
+    this.seizedAtExtraction = [];
+    const remoteIndices = this.mission.recovered
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.origin === 'interlace');
+    const auditPressure = this.interlaceTriggered && !this.director.auditorDefeated
+      ? this.director.threat + remoteIndices.length * 0.12
+      : 0;
+    if (remoteIndices.length > 0 && auditPressure >= 0.68) {
+      const target = remoteIndices
+        .sort((a, b) => b.item.value - a.item.value)[0];
+      this.seizedAtExtraction.push(...this.mission.recovered.splice(target.index, 1));
+      this.events.onLoot?.(this.mission.recoveredValue);
+      this.events.onFeed?.(
+        `A Chave Geral seized ${target.item.name} at the passage threshold. Defeating The Auditor prevents this.`,
+        'danger',
+      );
+    }
+    this.finish(true);
   }
 
   forceInterlace() {
@@ -312,20 +359,18 @@ export class RunController {
   triggerInterlace() {
     this.interlaceTriggered = true;
     this.renderer.showInterlace();
-    this.events.onInterlace?.();
-    this.events.onFeed?.('SAFE WINDOW CLOSED. ANOTHER SERVER IS ENTERING THIS ONE.', 'danger');
-    const candidates = this.mapState.interlace.rooms.filter((room) => room.difficulty > 0.48).slice(0, 8);
-    for (const [index, room] of candidates.entries()) {
-      this.combat.spawnEnemy({
-        x: room.x + ((room.sourceRoomId % 3) - 1) * 1.2,
-        z: room.z + (room.sourceRoomId % 2 ? 1.1 : -1.1),
-        roomId: `interlace-${room.id}`,
-        elite: room.type === 'elite' || room.type === 'vault',
-        interlaced: true,
-        difficulty: room.difficulty,
-        archetype: index % 3 === 2 ? 'gunner' : 'pursuer',
-      });
-    }
+    this.mission.activateInterlace();
+    this.spawnRemoteEnemies();
+    this.events.onInterlace?.({
+      rooms: this.mapState.interlace?.rooms?.length ?? 0,
+      connections: this.mapState.interlace?.connections?.length ?? 0,
+      bridges: this.mapState.interlace?.bridges?.length ?? 0,
+      overlaps: this.mapState.interlace?.overlaps?.length ?? 0,
+    });
+    this.events.onFeed?.(
+      `SAFE WINDOW CLOSED. INDEPENDENT SERVER ${this.mapState.interlace?.seedLabel ?? 'UNKNOWN'} HAS ENTERED THIS STATE.`,
+      'danger',
+    );
     this.reportProgress();
   }
 
@@ -350,6 +395,7 @@ export class RunController {
       currentRoomId: this.mission.currentRoom?.id ?? this.mapState.entranceRoomId,
       clearedRoomIds: this.mission.clearedRoomIds,
       interlaced: this.interlaceTriggered,
+      overlapsVisited: [...this.mission.overlapsVisited],
     });
     return status;
   }
@@ -367,8 +413,10 @@ export class RunController {
     const result = {
       success,
       seed: this.mapState.seedLabel,
+      remoteSeed: this.mapState.interlace?.seedLabel,
       elapsedSeconds: Math.round(this.elapsed),
       recovered: this.mission.recovered,
+      seized: this.seizedAtExtraction,
       value,
       instituteCut,
       baseFieldPayout,
@@ -377,6 +425,9 @@ export class RunController {
       contract: this.contract,
       contractComplete: contractStatus.complete,
       roomsCleared: this.mission.clearedRoomCount,
+      remoteRoomsCleared: this.mission.remoteClearedRoomCount,
+      remoteObjects: this.mission.remoteRecoveredCount,
+      overlapsVisited: this.mission.overlapsVisited.size,
       auditorDefeated: this.director.auditorDefeated,
       interlaceTriggered: this.interlaceTriggered,
       timestamp: new Date().toISOString(),
