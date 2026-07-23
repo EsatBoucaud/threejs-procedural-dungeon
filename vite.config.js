@@ -6,7 +6,7 @@ import { defineConfig } from 'vite';
 const root = fileURLToPath(new URL('.', import.meta.url));
 
 // Multi-page Vite build: the original Three.js forge remains the map-authoring
-// surface while game.html proves the saved JSON can drive a separate runtime.
+// surface while game.html and search.html prove separate saved-state runtimes.
 export default defineConfig({
   base: './',
   build: {
@@ -16,6 +16,7 @@ export default defineConfig({
       input: {
         forge: resolve(root, 'index.html'),
         game: resolve(root, 'game.html'),
+        search: resolve(root, 'search.html'),
       },
     },
   },
