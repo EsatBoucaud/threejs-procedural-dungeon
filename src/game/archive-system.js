@@ -24,6 +24,15 @@ function appraise(item) {
   return Math.max(1, Math.round(item.value * conditionMultiplier(item.condition) * originMultiplier));
 }
 
+function stableRoll(text) {
+  let hash = 2166136261;
+  for (let index = 0; index < String(text).length; index += 1) {
+    hash ^= String(text).charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) % 100;
+}
+
 export function loadArchive() {
   try {
     const stored = JSON.parse(localStorage.getItem(ARCHIVE_KEY) ?? 'null');
@@ -50,13 +59,13 @@ export function saveArchive(archive) {
 export function recordRecoveredObjects(result) {
   const archive = loadArchive();
   const recovered = result.recovered ?? [];
-  const retentionCount = Math.floor(recovered.length * 0.15);
-  const retainedIds = new Set(
-    [...recovered]
-      .sort((a, b) => appraise(b) - appraise(a))
-      .slice(0, retentionCount)
-      .map((item) => item.instanceId),
-  );
+  const maximumHeld = Math.ceil(recovered.length * 0.15);
+  const eligible = recovered
+    .filter((item) => stableRoll(`${result.seed}:${item.instanceId}:retention`) < 15)
+    .sort((a, b) => appraise(b) - appraise(a))
+    .slice(0, maximumHeld);
+  const retainedIds = new Set(eligible.map((item) => item.instanceId));
+
   const entries = recovered.map((item, index) => {
     const instituteHeld = retainedIds.has(item.instanceId);
     return {
@@ -68,7 +77,9 @@ export function recordRecoveredObjects(result) {
       runSeed: result.seed,
       remoteSeed: result.remoteSeed ?? null,
       recoveredAt: result.timestamp,
-      heldReason: instituteHeld ? 'Instituto Travessia exercised its object-retention allowance.' : null,
+      heldReason: instituteHeld
+        ? 'Instituto Travessia exercised its deterministic fifteen-percent retention allowance.'
+        : null,
     };
   });
   archive.objects.unshift(...entries);
