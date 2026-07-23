@@ -28,8 +28,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate generated ABRIR maps
-        run: npm run validate:maps
-
-      - name: Build production bundle
-        run: npm run build
+      - name: Generate, validate, and build ABRIR
+        run: npm run check
