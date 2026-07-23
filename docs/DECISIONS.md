@@ -18,7 +18,7 @@ At least one generated JSON map ships in the repository. This makes builds repro
 
 ## D-005 — Data-driven generated runs
 
-Rooms, corridors, route parameters, contracts, loot, permissions, deployment ownership, combat-kit assignments, and interlace geometry are represented as serializable data. Rendering and gameplay derive from those contracts rather than hard-coding a single level.
+Rooms, corridors, route parameters, contracts, loot, permissions, deployment ownership, combat-kit assignments, field activities, and interlace geometry are represented as serializable data. Rendering and gameplay derive from those contracts rather than hard-coding a single level.
 
 ## D-006 — Independent interlace states
 
@@ -58,7 +58,7 @@ Each recovered object receives a deterministic fifteen-percent retention roll, w
 
 ## D-015 — Merge aggressively but preserve checks
 
-Large systems additions continue through scoped branches and pull requests. Pull requests may be merged rapidly after generation checks, headquarters/economy checks, process checks, room-layout checks, deployment checks, repository validation, and production build all pass.
+Large systems additions continue through scoped branches and pull requests. Pull requests may be merged rapidly after generation checks, headquarters/economy checks, process checks, room-layout checks, deployment checks, activity-authority checks, repository validation, and production build all pass.
 
 ## D-016 — Rendering and collision share one room-layout contract
 
@@ -87,3 +87,11 @@ Character selection and combat-kit selection are separate decisions. Any charact
 ## D-022 — Local prototype ownership is not finished networking
 
 The current browser prototype can select a local player and resolve only that player's owned character or pair for local control. This validates assignment and swapping rules but does not claim completed two-player or four-player networking. Remote entities, replication, reconnect, and simultaneous control remain explicit implementation work.
+
+## D-023 — No field activity belongs to a fixed role
+
+Any eligible player may loot, inspect, talk, initiate card battles, negotiate, operate puzzles, activate systems, revive, propose route decisions, and request extraction. Character identity and combat kit may change available information, modifiers, animation, or consequences, but they do not reserve an activity for a designated specialist.
+
+Restrictions must come from world state: proximity, incapacitation, disconnection, target claims, mission locks, prerequisites, or unresolved group consequences. They must not come from melee/ranged family, class labels, player seat, or an invisible responsibility assignment.
+
+Consequential actions may require agreement, opposition, abstention, or a visible disagreement roll. That governs how the team resolves a choice; it does not govern which player is allowed to bring the choice forward.
