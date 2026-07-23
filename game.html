@@ -4,31 +4,99 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#05070c" />
-    <title>ABRIR — Saved Map Runtime</title>
+    <meta
+      name="description"
+      content="ABRIR combat grey box running on a saved Three.js procedural map state."
+    />
+    <title>ABRIR — Interlaced Room Combat Test</title>
   </head>
   <body>
     <div id="game-shell">
-      <header id="hud">
-        <div>
-          <p class="eyebrow">ABRIR · MVP MAP TEST</p>
-          <h1 id="map-name">Loading saved map…</h1>
-          <p id="map-meta"></p>
-        </div>
-        <div class="hud-right">
-          <p id="room-readout">Locating entrance…</p>
-          <p id="interlace-readout">INTERLACING · DORMANT</p>
-        </div>
-      </header>
+      <main id="viewport" aria-label="ABRIR saved procedural map combat test"></main>
+      <div id="damage-vignette" aria-hidden="true"></div>
 
-      <aside id="controls">
-        <strong>Grey-box controls</strong>
-        <span>WASD / arrows · move</span>
-        <span>I · toggle interlacing test</span>
-        <a href="./index.html">Open Three.js forge</a>
-      </aside>
+      <section id="party-panel" class="combat-ui" aria-label="Field team status">
+        <article id="agent-card-ranged" class="agent-card active">
+          <div class="portrait portrait-ranged" aria-hidden="true"><span>R</span></div>
+          <div class="agent-card-copy">
+            <div class="agent-card-heading"><strong>RANGED</strong><span>FIELD MEDIC</span></div>
+            <div class="health-track"><i id="health-ranged"></i></div>
+            <small id="health-ranged-copy">100 / 100</small>
+          </div>
+        </article>
 
-      <main id="viewport" aria-label="ABRIR saved procedural map test"></main>
+        <article id="agent-card-melee" class="agent-card">
+          <div class="portrait portrait-melee" aria-hidden="true"><span>M</span></div>
+          <div class="agent-card-copy">
+            <div class="agent-card-heading"><strong>MELEE</strong><span>VANGUARD</span></div>
+            <div class="health-track"><i id="health-melee"></i></div>
+            <small id="health-melee-copy">145 / 145</small>
+          </div>
+        </article>
+      </section>
+
+      <section id="mission-panel" class="combat-ui" aria-live="polite">
+        <p class="eyebrow">ABRIR · MVP COMBAT TEST</p>
+        <h1 id="map-name">Loading saved map…</h1>
+        <p id="room-readout">Locating entrance…</p>
+        <p id="objective-readout">Find the marked combat room.</p>
+      </section>
+
+      <section id="interlace-panel" class="combat-ui" aria-label="Interlacing state">
+        <div class="interlace-head"><span>NIGHT PRESSURE</span><b id="interlace-readout">DORMANT</b></div>
+        <div class="interlace-track"><i id="interlace-fill"></i></div>
+        <small id="map-meta"></small>
+      </section>
+
+      <section id="item-rack" class="combat-ui" aria-label="Recovered objects">
+        <div class="active-miniature">
+          <div id="active-mini-portrait" class="portrait portrait-ranged"><span>R</span></div>
+          <div><small>ACTIVE</small><strong id="active-agent-name">RANGED</strong></div>
+        </div>
+        <div class="item-slots">
+          <div class="item-slot"><kbd>Z</kbd><span>EMPTY</span></div>
+          <div class="item-slot"><kbd>X</kbd><span>EMPTY</span></div>
+          <div class="item-slot"><kbd>C</kbd><span id="loot-value">₵ 000</span></div>
+        </div>
+      </section>
+
+      <section id="ability-rack" class="combat-ui" aria-label="Active operative abilities">
+        <article id="ability-primary" class="ability-slot ready">
+          <kbd>1 / LMB</kbd>
+          <strong id="ability-primary-name">PRECISION SHOT</strong>
+          <small id="ability-primary-copy">Ranged projectile</small>
+          <i class="cooldown-mask"></i>
+        </article>
+        <article id="ability-secondary" class="ability-slot ready">
+          <kbd>2</kbd>
+          <strong id="ability-secondary-name">FIELD TREATMENT</strong>
+          <small id="ability-secondary-copy">Restore both operatives</small>
+          <i class="cooldown-mask"></i>
+        </article>
+        <article id="ability-dodge" class="ability-slot ready">
+          <kbd>SHIFT</kbd>
+          <strong>DODGE</strong>
+          <small>Brief invulnerability</small>
+          <i class="cooldown-mask"></i>
+        </article>
+        <article class="ability-slot switch-slot ready">
+          <kbd>Q / TAB</kbd>
+          <strong>SWITCH</strong>
+          <small>Take direct control</small>
+        </article>
+      </section>
+
+      <section id="control-note" class="combat-ui">
+        <span>WASD · MOVE</span><span>MOUSE · AIM</span><span>I · INTERLACE TEST</span>
+        <a href="./index.html">OPEN MAP FORGE</a>
+      </section>
+
+      <div id="encounter-banner" role="status" aria-live="assertive">
+        <small id="encounter-kicker">ROOM STATE</small>
+        <strong id="encounter-message">SEARCHING</strong>
+      </div>
     </div>
+
     <script type="module" src="./src/game/main.js"></script>
   </body>
 </html>
