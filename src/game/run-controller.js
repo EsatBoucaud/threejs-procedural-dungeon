@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { processForMap } from '../content/chave-processes.js';
 import { OPERATIVES } from '../content/characters.js';
 import { contractForSeed, contractProgress } from '../content/contracts.js';
 import { recordRecoveredObjects } from './archive-system.js';
@@ -22,7 +23,8 @@ export class RunController {
     this.events = events;
     this.profile = loadProfile();
     this.route = mapState.route ?? null;
-    this.contract = mapState.contract ?? contractForSeed(mapState.seed);
+    this.majorProcess = processForMap(mapState);
+    this.contract = mapState.contract ?? contractForSeed(mapState.seed, this.majorProcess.id);
     this.activeOperativeIndex = 0;
     this.healthByOperative = OPERATIVES.map((operative) => operative.maxHealth);
     this.abilityCooldowns = OPERATIVES.map(() => 0);
@@ -47,7 +49,9 @@ export class RunController {
     this.isWalkable = createWalkability(mapState, () => this.interlaceTriggered);
 
     if (hasUpgrade(this.profile, 'route-priority')) this.mapState.interlaceAtSeconds += 15;
-    if (hasUpgrade(this.profile, 'auditor-exemption')) this.mapState.interlaceAtSeconds += 8;
+    if (this.majorProcess.id === 'auditor' && hasUpgrade(this.profile, 'auditor-exemption')) {
+      this.mapState.interlaceAtSeconds += 8;
+    }
 
     this.combat = new CombatSystem(renderer, {
       onFeed: (...args) => this.events.onFeed?.(...args),
@@ -234,23 +238,28 @@ export class RunController {
   }
 
   attemptExtraction() {
-    this.seizedAtExtraction = [];
+    if (!this.director.canExtract()) {
+      this.events.onFeed?.(`${this.majorProcess.name} is holding the return passage closed.`, 'danger');
+      return;
+    }
+
+    this.seizedAtExtraction = this.mission.drainProcessSeizures();
     const insured = hasUpgrade(this.profile, 'field-insurance');
     const remoteIndices = this.mission.recovered
       .map((item, index) => ({ item, index }))
       .filter(({ item }) => item.origin === 'interlace');
-    const auditPressure = this.interlaceTriggered && !this.director.auditorDefeated
+    const unresolvedProcessPressure = this.interlaceTriggered && !this.director.majorDefeated
       ? this.director.threat + remoteIndices.length * 0.12
       : 0;
-    if (remoteIndices.length > 0 && auditPressure >= 0.68 && !insured) {
+    if (remoteIndices.length > 0 && unresolvedProcessPressure >= 0.68 && !insured) {
       const target = remoteIndices.sort((a, b) => b.item.value - a.item.value)[0];
       this.seizedAtExtraction.push(...this.mission.recovered.splice(target.index, 1));
       this.events.onLoot?.(this.mission.recoveredValue);
       this.events.onFeed?.(
-        `A Chave Geral seized ${target.item.name} at the passage threshold. Defeating The Auditor prevents this.`,
+        `A Chave Geral seized ${target.item.name} at the passage threshold. Defeating ${this.majorProcess.name} prevents unresolved-process seizure.`,
         'danger',
       );
-    } else if (remoteIndices.length > 0 && auditPressure >= 0.68 && insured) {
+    } else if (remoteIndices.length > 0 && unresolvedProcessPressure >= 0.68 && insured) {
       this.events.onFeed?.('FIELD INSURANCE accepted the seizure notice and returned it unsigned.', 'good');
     }
     this.finish(true);
@@ -380,6 +389,7 @@ export class RunController {
       connections: this.mapState.interlace?.connections?.length ?? 0,
       bridges: this.mapState.interlace?.bridges?.length ?? 0,
       overlaps: this.mapState.interlace?.overlaps?.length ?? 0,
+      majorProcess: this.majorProcess,
     });
     this.events.onFeed?.(
       `SAFE WINDOW CLOSED. INDEPENDENT SERVER ${this.mapState.interlace?.seedLabel ?? 'UNKNOWN'} HAS ENTERED THIS STATE.`,
@@ -401,6 +411,7 @@ export class RunController {
   reportProgress() {
     const snapshot = this.mission.snapshot({
       interlace: this.interlaceTriggered,
+      majorProcess: this.director?.majorDefeated ?? false,
       auditor: this.director?.auditorDefeated ?? false,
     });
     const status = contractProgress(this.contract, snapshot);
@@ -417,6 +428,7 @@ export class RunController {
   finish(success) {
     if (this.finished) return;
     this.finished = true;
+    if (!success) this.seizedAtExtraction.push(...this.mission.drainProcessSeizures());
     const contractStatus = this.reportProgress();
     const value = this.recoveredValue;
     const instituteCut = Math.ceil(value * 0.15);
@@ -447,6 +459,9 @@ export class RunController {
       remoteVaultCleared: this.mission.remoteVaultCleared,
       remoteObjects: this.mission.remoteRecoveredCount,
       overlapsVisited: this.mission.overlapsVisited.size,
+      majorProcessId: this.majorProcess.id,
+      majorProcessName: this.majorProcess.name,
+      majorProcessDefeated: this.director.majorDefeated,
       auditorDefeated: this.director.auditorDefeated,
       interlaceTriggered: this.interlaceTriggered,
       timestamp: new Date().toISOString(),
