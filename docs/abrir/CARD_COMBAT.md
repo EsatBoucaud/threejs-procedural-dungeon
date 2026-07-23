@@ -1,12 +1,45 @@
-# ABRIR Card Combat Prototype
+# ABRIR Dual Combat Prototype
 
 ## Combat identity
 
-ABRIR exploration remains spatial and real-time on the saved Three.js map. Entering a hostile room changes the rules: the room locks, the camera frames the encounter, and combat becomes turn-based and card-driven.
+ABRIR uses **both** real-time action combat and turn-based card combat. The room determines the rules.
 
-The card system is the MVP combat foundation. The previous real-time attack test was replaced rather than extended.
+Exploration remains spatial and real-time on the saved Three.js map. Entering a hostile room locks it, frames the encounter, and dispatches the correct combat mode from the room's authored gameplay role.
 
-## Current turn structure
+For the current MVP map:
+
+- a shallow generated combat room runs a real-time skirmish;
+- a deeper elite-capable room runs tactical card combat;
+- both encounters must be cleared and looted before extraction.
+
+The two modes share the same operatives, current health, recovered value, interlacing state, and map topology.
+
+## Real-time room
+
+### Controls
+
+- WASD or arrow keys: move
+- Mouse: aim
+- Left click or 1: primary attack
+- 2: secondary ability
+- Shift: dodge with brief invulnerability
+- Q or Tab: switch active operative
+
+### Sócrates
+
+- Precision Shot: fast ranged projectile.
+- Field Treatment: restores both operatives.
+
+### Zélia
+
+- Heavy Arc: wide close-range strike.
+- Ground Break: damages nearby enemies.
+
+The inactive partner follows the active operative. Enemies pursue, attack on contact, display health, and can include an interlaced elite.
+
+## Card combat room
+
+### Current turn structure
 
 1. Begin the player turn with 3 **Time**.
 2. Draw to a five-card hand.
@@ -18,9 +51,9 @@ The card system is the MVP combat foundation. The previous real-time attack test
 
 Unused Time expires at the end of the player turn.
 
-## Spatial layer
+### Spatial layer
 
-Combat uses three lanes:
+Card combat uses three lanes:
 
 - Front
 - Mid
@@ -28,22 +61,7 @@ Combat uses three lanes:
 
 Two operatives occupy the allied side of the generated room. Enemies occupy the opposing side. Lane position affects some card outcomes, including Zélia's Heavy Arc.
 
-## MVP operatives
-
-### Sócrates — Field Medic
-
-- Suppress: ranged damage and Weak.
-- Investigate: card draw and future Time.
-- Field Treatment: heals the most injured operative.
-
-### Zélia — Vanguard
-
-- Restrain: removes an enemy action.
-- Heavy Arc: increased damage when sharing the enemy's lane.
-
-Neutral cards can be played by the currently active operative.
-
-## Current deck
+### Current deck
 
 - Tactical Advance
 - Restrain
@@ -56,25 +74,7 @@ Neutral cards can be played by the currently active operative.
 
 The deck is deterministically shuffled from the saved map seed so the prototype can be reproduced.
 
-## Interlacing test
-
-The `I` key still toggles the provisional interlacing state. In combat it:
-
-- changes the room lighting and floor treatment;
-- adds an additional hostile unit;
-- upgrades the final unit to an elite;
-- increases hostile attack damage;
-- raises the recovered object's provisional value.
-
-## Current controls
-
-### Exploration
-
-- WASD or arrow keys: move
-- Q or Tab: switch active operative
-- I: toggle interlacing test
-
-### Combat
+### Controls
 
 - Click a card to play it or prepare a targeted card.
 - Click a highlighted enemy label to resolve a targeted card.
@@ -82,13 +82,36 @@ The `I` key still toggles the provisional interlacing state. In combat it:
 - Q or Tab changes the active operative.
 - Enter or the End Turn button ends the player turn.
 
+## Run loop now implemented
+
+1. Explore the generated map.
+2. Clear one real-time skirmish room.
+3. Clear one card-combat room.
+4. Recover both exposed objects.
+5. Return to the generated entrance.
+6. Choose **Extract** or **Stay After Night**.
+7. Staying interlaces and reopens the tactical room with an elite encounter.
+8. Extract to see recovered value, the Instituto Travessia's 15% retention, and secured value.
+
+## Interlacing
+
+Interlacing:
+
+- changes room lighting and floor treatment;
+- increases real-time hostile count;
+- adds an elite to the card encounter;
+- increases hostile damage;
+- raises recovered-object value;
+- creates the current stay-after-night escalation.
+
 ## Deliberate placeholders
 
 - Character and enemy models
 - Character portraits
 - Card illustrations
 - Sound and animation timing
-- Final card balance
-- Extraction and post-run valuation
+- Final card and action-combat balance
+- Final room-mode authoring rules
+- Final extraction presentation
 
-The UI composition, lane model, Time economy, card flow, enemy intents, draw/discard system, and deterministic encounter are functional MVP systems rather than visual mockups.
+The room dispatcher, shared health state, both combat loops, card economy, enemy intents, real-time cooldown abilities, extraction decision, interlacing escalation, and run report are functional MVP systems rather than visual mockups.
