@@ -2,6 +2,7 @@ import './ui/styles.css';
 import './ui/headquarters.css';
 import './ui/processes.css';
 import './ui/deployment-builder.css';
+import './ui/shared-interactions.css';
 import { applyDeployment } from './content/characters.js';
 import { seedForRoute } from './content/routes.js';
 import { generateMapState, validateMapState } from './core/dungeon-generator.js';
@@ -10,12 +11,13 @@ import {
   normalizeDeployment,
   validateDeployment,
 } from './game/deployment-system.js';
-import { RunController } from './game/run-controller.js';
+import { InteractiveRunController } from './game/interactive-run-controller.js';
 import { loadProfile, rankTitle } from './game/progression-system.js';
 import { WorldRenderer } from './render/world-renderer.js';
 import { DeploymentBuilder } from './ui/deployment-builder.js';
 import { Headquarters } from './ui/headquarters.js';
 import { Minimap } from './ui/minimap.js';
+import { SharedInteractionPanel } from './ui/shared-interactions.js';
 
 const canvas = document.querySelector('#game-canvas');
 const renderer = new WorldRenderer(canvas);
@@ -65,6 +67,8 @@ const elements = {
   debriefRank: document.querySelector('#debrief-rank'),
   debriefContract: document.querySelector('#debrief-contract'),
   minimap: document.querySelector('#minimap-canvas'),
+  interactionRoot: document.querySelector('#shared-interaction-root'),
+  interactionHint: document.querySelector('#interaction-hint'),
 };
 
 const input = {
@@ -91,6 +95,13 @@ const deploymentBuilder = new DeploymentBuilder(elements.deployment, {
   onChange: (deployment, validation) => {
     pendingDeployment = deployment;
     elements.begin.disabled = !validation.valid;
+  },
+});
+
+const sharedPanel = new SharedInteractionPanel(elements.interactionRoot, {
+  onAction: (action) => {
+    const result = run?.handleSharedInteractionAction(action);
+    if (result && result.success === false) feed(`Interaction request refused: ${result.reason}.`, 'danger');
   },
 });
 
@@ -166,6 +177,16 @@ function renderContract(contract, status) {
   }
 }
 
+function updateInteractionHint(hint) {
+  if (!hint || sharedPanel.isOpen()) {
+    elements.interactionHint.classList.remove('visible');
+    elements.interactionHint.textContent = '';
+    return;
+  }
+  elements.interactionHint.innerHTML = `<kbd>E</kbd><span>${hint.label}</span>`;
+  elements.interactionHint.classList.add('visible');
+}
+
 function createRunEvents() {
   return {
     onOperative: updateOperative,
@@ -220,6 +241,15 @@ function createRunEvents() {
         'danger',
       );
     },
+    onInteractionHint: updateInteractionHint,
+    onSharedInteraction: (snapshot) => {
+      sharedPanel.update(snapshot);
+      document.body.classList.toggle('shared-interaction-open', Boolean(snapshot.activeSession));
+      if (snapshot.activeSession) elements.interactionHint.classList.remove('visible');
+    },
+    onInteractionEffect: ({ type, effect }) => {
+      feed(`${type.replaceAll('-', ' ')} consequence registered: ${effect.replaceAll('-', ' ')}.`, effect.includes('loss') || effect.includes('risk') ? 'danger' : 'good');
+    },
     onFeed: feed,
     onFinish: showDebrief,
   };
@@ -256,7 +286,8 @@ function installRun(state, deployment = state.deployment ?? pendingDeployment) {
   renderer.resetEntities();
   renderer.buildMap(state);
   minimap = new Minimap(elements.minimap, state);
-  run = new RunController(renderer, state, createRunEvents());
+  run = new InteractiveRunController(renderer, state, createRunEvents());
+  sharedPanel.setPerspective(normalizedDeployment.localPlayerId);
   const routeLabel = state.route?.name ? `${state.route.name} // ` : '';
   const modeLabel = normalizedDeployment.mode === 'two-player' ? '2P' : '4P';
   elements.seed.textContent = `${modeLabel} // ${routeLabel}${state.seedLabel} ↔ ${state.interlace?.seedLabel ?? 'PENDING'}`;
@@ -264,7 +295,8 @@ function installRun(state, deployment = state.deployment ?? pendingDeployment) {
   elements.eventFeed.replaceChildren();
   elements.bossBanner.classList.remove('visible');
   elements.threatFill.style.width = '0%';
-  document.body.classList.remove('interlaced', 'high-threat');
+  elements.interactionHint.classList.remove('visible');
+  document.body.classList.remove('interlaced', 'high-threat', 'shared-interaction-open');
   input.aimWorld = run.player.position.clone();
   input.aimWorld.z -= 5;
   updateProfile();
@@ -285,7 +317,7 @@ function begin() {
   const ownership = pendingDeployment.mode === 'two-player'
     ? `${pendingDeployment.localPlayerId.toUpperCase()} controls two characters; Q swaps between that assigned pair.`
     : `${pendingDeployment.localPlayerId.toUpperCase()} controls one character; the other three belong to the other players.`;
-  feed(`${routeName}: passage opened. ${ownership}`, 'good');
+  feed(`${routeName}: passage opened. ${ownership} Any player may lead field interactions.`, 'good');
   pendingRoute = null;
 }
 
@@ -305,8 +337,11 @@ function showDebrief(result) {
   const processCopy = result.majorProcessName
     ? ` ${result.majorProcessName} was ${result.majorProcessDefeated ? 'terminated in the field' : 'left active when the run closed'}.`
     : '';
+  const participationCopy = result.activityParticipation?.length
+    ? ` ${result.activityParticipation.length} player participation records were attached to the field account.`
+    : '';
   elements.debriefCopy.textContent = result.success
-    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back after ${result.roomsCleared} stabilized rooms.${remoteCopy}${processCopy}${seizureCopy}${retentionCopy}`
+    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back after ${result.roomsCleared} stabilized rooms.${remoteCopy}${processCopy}${seizureCopy}${retentionCopy}${participationCopy}`
     : `The passage closed around the team. ${result.majorProcessName ?? 'The assigned process'} remained ${result.majorProcessDefeated ? 'terminated' : 'active'}. Both generated map states remain reproducible; the loss does not.`;
   elements.debriefValue.textContent = formatCurrency(result.value);
   elements.debriefCut.textContent = formatCurrency(result.instituteCut);
@@ -368,6 +403,7 @@ window.addEventListener('keydown', (event) => {
   input.keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
   if (!started || event.repeat) return;
+  if (sharedPanel.isOpen()) return;
   if (event.code === 'KeyQ') {
     if (run.teamSnapshot().length > 1) run.switchOperative();
     else feed('Four-player ownership: this player has no reserve character to swap into.', '');
@@ -384,11 +420,11 @@ canvas.addEventListener('pointermove', (event) => {
   input.aimWorld = renderer.screenToWorld(event.clientX, event.clientY);
   elements.crosshair.style.left = `${event.clientX}px`;
   elements.crosshair.style.top = `${event.clientY}px`;
-  elements.crosshair.style.opacity = started ? '1' : '0';
+  elements.crosshair.style.opacity = started && !sharedPanel.isOpen() ? '1' : '0';
 });
 canvas.addEventListener('pointerleave', () => { elements.crosshair.style.opacity = '0'; });
 canvas.addEventListener('pointerdown', (event) => {
-  if (!started || event.button !== 0) return;
+  if (!started || sharedPanel.isOpen() || event.button !== 0) return;
   input.aimWorld = renderer.screenToWorld(event.clientX, event.clientY);
   run.attack(input.aimWorld);
 });
@@ -402,8 +438,10 @@ function frame(time) {
   previousTime = time;
   if (run) {
     const aim = input.aimWorld ?? run.player.position.clone();
-    if (started) run.update(delta, movementVector(), aim);
-    else renderer.update(delta, run.player.position, aim);
+    if (started) {
+      const movement = sharedPanel.isOpen() ? { x: 0, z: 0 } : movementVector();
+      run.update(delta, movement, aim);
+    } else renderer.update(delta, run.player.position, aim);
   }
   requestAnimationFrame(frame);
 }

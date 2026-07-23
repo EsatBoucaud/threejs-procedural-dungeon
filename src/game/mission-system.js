@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildInteractionNodes } from '../content/interaction-content.js';
 import { itemForRoom } from '../content/items.js';
 import { ACTIVITY_TYPES, ActivityAuthority } from './activity-authority.js';
 
@@ -39,8 +40,12 @@ export class MissionSystem {
     this.recovered = [];
     this.processSeized = [];
     this.shrines = [];
+    this.interactionNodes = [];
+    this.returnMarks = [];
+    this.classificationDisputes = [];
     this.currentRoom = null;
     this.lastRoom = null;
+    this.lastInteractionHint = null;
     this.payoutMultiplier = 1;
     this.remotePayoutMultiplier = 1;
     this.interlaceActive = false;
@@ -51,6 +56,9 @@ export class MissionSystem {
 
     for (const room of this.baseRooms.filter((entry) => entry.type === 'shrine')) {
       this.createShrine(room, false);
+    }
+    for (const node of buildInteractionNodes(mapState).filter((entry) => entry.origin === 'base')) {
+      this.createInteractionNode(node);
     }
   }
 
@@ -91,9 +99,6 @@ export class MissionSystem {
     return activity;
   }
 
-  // Dialogue, card battles, puzzles, negotiation, hacking, route actions, and
-  // later authored interactions all enter through this same authority path.
-  // No activity is reserved for a character, kit, combat family, or player seat.
   startFieldActivity(type, actor, target, context = {}) {
     return this.beginActivity(type, actor, target, context);
   }
@@ -110,6 +115,7 @@ export class MissionSystem {
     const position = new THREE.Vector3(room.x, 0, room.z);
     const mesh = this.renderer.createShrine(position, remote ? 0xc77bd6 : 0x7fa4e8);
     this.shrines.push({
+      shrineId: `shrine:${room.id}`,
       roomId: room.id,
       position,
       mesh,
@@ -117,6 +123,23 @@ export class MissionSystem {
       remote,
       phase: (room.dressingSeed ?? 1) * 0.00083,
       boon: BOONS[(this.mapState.seed + (room.dressingSeed ?? 0)) % BOONS.length],
+    });
+  }
+
+  createInteractionNode(node) {
+    const position = new THREE.Vector3(node.position.x, 0, node.position.z);
+    const color = node.type === 'dialogue'
+      ? node.origin === 'interlace' ? 0xd68bd2 : 0x69c9bd
+      : node.origin === 'interlace' ? 0xa279df : 0xd5b76d;
+    const mesh = this.renderer.createShrine(position, color);
+    mesh.scale.setScalar(node.type === 'card-battle' ? 0.86 : 0.72);
+    this.interactionNodes.push({
+      ...structuredClone(node),
+      position,
+      mesh,
+      used: false,
+      active: node.origin === 'base',
+      phase: ((node.roomId?.toString().length ?? 1) + this.interactionNodes.length) * 0.73,
     });
   }
 
@@ -129,6 +152,11 @@ export class MissionSystem {
       state.active = true;
       state.cleared = room.type === 'breach' || room.type === 'shrine';
       if (room.type === 'shrine') this.createShrine(room, true);
+    }
+    for (const node of buildInteractionNodes(this.mapState).filter((entry) => entry.origin === 'interlace')) {
+      this.createInteractionNode(node);
+      const created = this.interactionNodes.at(-1);
+      created.active = true;
     }
     this.events.onFeed?.(
       `${this.remoteRooms.length} remote rooms and ${(this.mapState.interlace?.bridges ?? []).length} cross-state routes are now physically negotiable.`,
@@ -181,6 +209,8 @@ export class MissionSystem {
       remoteVault: this.remoteVaultCleared,
       overlaps: this.overlapsVisited.size,
       processSeized: this.processSeized.length,
+      returnMarks: this.returnMarks.length,
+      classificationDisputes: this.classificationDisputes.length,
       activityParticipation: this.activitySnapshot().participation,
       ...extra,
     };
@@ -222,19 +252,124 @@ export class MissionSystem {
     const position = new THREE.Vector3(room.x + offset, 0, room.z - offset * 0.4);
     const mesh = this.renderer.createLoot(position, item.color);
     this.loot.push({
+      lootId: `loot:${String(room.id)}:${item.instanceId}`,
       item,
       position,
       mesh,
       collected: false,
+      resolved: false,
+      decision: null,
       phase: (room.dressingSeed ?? 1) * 0.0001,
       roomId: room.id,
     });
     this.events.onFeed?.(
       interlaced
-        ? 'A contradictory object has stabilized. Any player may inspect or recover it.'
-        : 'Object density has become negotiable. Any player in range may act.',
+        ? 'A contradictory object has stabilized. Any player may inspect it and propose what happens next.'
+        : 'Object density has become negotiable. Any player in range may open the object record.',
       interlaced ? 'danger' : '',
     );
+  }
+
+  resolveObjectDecision(lootId, optionId, actor = {}) {
+    const normalizedActor = this.normalizeActor(actor);
+    const entry = this.loot.find((loot) => loot.lootId === lootId);
+    if (!entry || entry.collected || entry.resolved) return { success: false, reason: 'object-unavailable' };
+    entry.resolved = true;
+    entry.decision = optionId;
+
+    if (optionId === 'leave') {
+      entry.leftByPlayerId = normalizedActor.playerId;
+      entry.leftByCharacterId = normalizedActor.characterId;
+      this.events.onFeed?.(`${normalizedActor.characterId} left ${entry.item.name} in the room.`, '');
+      this.reportProgress();
+      return { success: true, recovered: false, entry };
+    }
+
+    const activity = this.beginActivity(
+      ACTIVITY_TYPES.LOOT,
+      normalizedActor,
+      {
+        id: entry.item.instanceId ?? entry.lootId,
+        roomId: entry.roomId,
+        itemName: entry.item.name,
+      },
+      { requiresProximity: true, inRange: true },
+    );
+    if (activity.status === 'denied') {
+      entry.resolved = false;
+      entry.decision = null;
+      return { success: false, reason: activity.denialReasons.join(',') };
+    }
+
+    entry.collected = true;
+    this.renderer.removeObject(entry.mesh);
+    const recoveredItem = {
+      ...entry.item,
+      recoveredByPlayerId: normalizedActor.playerId,
+      recoveredByCharacterId: normalizedActor.characterId,
+      fieldDecision: optionId,
+      markedForReturn: optionId === 'mark-return',
+      classificationContested: optionId === 'contest',
+    };
+    this.recovered.push(recoveredItem);
+    if (recoveredItem.markedForReturn) this.returnMarks.push(recoveredItem.instanceId);
+    if (recoveredItem.classificationContested) this.classificationDisputes.push(recoveredItem.instanceId);
+    this.completeActivity(activity, { itemName: entry.item.name, fieldDecision: optionId });
+    this.events.onLoot?.(this.recoveredValue);
+    this.events.onFeed?.(
+      `${normalizedActor.characterId} recovered ${entry.item.name} under decision ${optionId.toUpperCase()}.`,
+      entry.item.origin === 'interlace' ? 'danger' : 'good',
+    );
+    this.reportProgress();
+    return { success: true, recovered: true, entry, item: recoveredItem };
+  }
+
+  resolveDialogue(nodeId, choice, actor = {}) {
+    const node = this.interactionNodes.find((entry) => entry.nodeId === nodeId && entry.type === 'dialogue');
+    if (!node || node.used) return { success: false, reason: 'dialogue-unavailable' };
+    node.used = true;
+    this.renderer.removeObject(node.mesh);
+    if (choice.effect === 'reveal-object') {
+      const room = this.rooms.get(node.roomId);
+      if (room) this.dropLoot(room);
+    }
+    if (choice.effect === 'mark-return') {
+      this.returnMarks.push(`promise:${node.nodeId}:${this.normalizeActor(actor).playerId}`);
+    }
+    this.events.onInteractionEffect?.({
+      type: 'dialogue',
+      effect: choice.effect,
+      nodeId,
+      roomId: node.roomId,
+      actor: this.normalizeActor(actor),
+    });
+    this.events.onFeed?.(`${node.speaker}: ${choice.outcome}`, 'good');
+    this.reportProgress();
+    return { success: true, node };
+  }
+
+  resolveCardBattle(nodeId, won, participants = []) {
+    const node = this.interactionNodes.find((entry) => entry.nodeId === nodeId && entry.type === 'card-battle');
+    if (!node || node.used) return { success: false, reason: 'card-battle-unavailable' };
+    node.used = true;
+    this.renderer.removeObject(node.mesh);
+    if (won) {
+      const room = this.rooms.get(node.roomId);
+      if (room) this.dropLoot(room);
+    }
+    this.events.onInteractionEffect?.({
+      type: 'card-battle',
+      effect: won ? 'card-win' : 'card-loss',
+      nodeId,
+      roomId: node.roomId,
+      participants: structuredClone(participants),
+    });
+    this.events.onFeed?.(
+      won ? `${node.opponent} released its claim. ${node.reward}` : `${node.opponent} closed the filing against the team.`,
+      won ? 'good' : 'danger',
+    );
+    this.reportProgress();
+    return { success: true, node, won };
   }
 
   seizeHighestRecovered(processId) {
@@ -271,51 +406,60 @@ export class MissionSystem {
     return items;
   }
 
-  interact(playerPosition, actor = {}) {
-    const normalizedActor = this.normalizeActor(actor);
+  nearestInteractable(playerPosition) {
     const nearestLoot = this.loot
-      .filter((entry) => !entry.collected)
-      .sort((a, b) => a.position.distanceTo(playerPosition) - b.position.distanceTo(playerPosition))[0];
-    if (nearestLoot && nearestLoot.position.distanceTo(playerPosition) < 2.4) {
-      const activity = this.beginActivity(
-        ACTIVITY_TYPES.LOOT,
-        normalizedActor,
-        {
-          id: nearestLoot.item.instanceId ?? `loot:${nearestLoot.roomId}`,
-          roomId: nearestLoot.roomId,
-          itemName: nearestLoot.item.name,
-        },
-        { requiresProximity: true, inRange: true },
-      );
-      if (activity.status === 'denied') return false;
-      nearestLoot.collected = true;
-      this.renderer.removeObject(nearestLoot.mesh);
-      this.recovered.push({
-        ...nearestLoot.item,
-        recoveredByPlayerId: normalizedActor.playerId,
-        recoveredByCharacterId: normalizedActor.characterId,
-      });
-      this.completeActivity(activity, { itemName: nearestLoot.item.name });
-      this.events.onLoot?.(this.recoveredValue);
-      this.events.onFeed?.(
-        `${normalizedActor.characterId} recovered ${nearestLoot.item.name} — ₢ ${nearestLoot.item.value} / ${nearestLoot.item.condition}.`,
-        nearestLoot.item.origin === 'interlace' ? 'danger' : 'good',
-      );
-      this.reportProgress();
-      return false;
-    }
+      .filter((entry) => !entry.collected && !entry.resolved)
+      .map((entry) => ({ kind: 'object', distance: entry.position.distanceTo(playerPosition), entry }))
+      .filter((entry) => entry.distance < 2.4)
+      .sort((a, b) => a.distance - b.distance)[0];
+    if (nearestLoot) return nearestLoot;
+
+    const nearestNode = this.interactionNodes
+      .filter((entry) => entry.active && !entry.used)
+      .map((entry) => ({ kind: entry.type, distance: entry.position.distanceTo(playerPosition), entry }))
+      .filter((entry) => entry.distance < 2.8)
+      .sort((a, b) => a.distance - b.distance)[0];
+    if (nearestNode) return nearestNode;
 
     const nearestShrine = this.shrines
       .filter((entry) => !entry.used)
-      .sort((a, b) => a.position.distanceTo(playerPosition) - b.position.distanceTo(playerPosition))[0];
-    if (nearestShrine && nearestShrine.position.distanceTo(playerPosition) < 2.8) {
+      .map((entry) => ({ kind: 'shrine', distance: entry.position.distanceTo(playerPosition), entry }))
+      .filter((entry) => entry.distance < 2.8)
+      .sort((a, b) => a.distance - b.distance)[0];
+    if (nearestShrine) return nearestShrine;
+
+    const entrance = this.rooms.get(this.mapState.entranceRoomId);
+    const portalDistance = Math.hypot(playerPosition.x - entrance.x, playerPosition.z - entrance.z);
+    if (portalDistance < 3.1) return { kind: 'extraction', distance: portalDistance, entry: entrance };
+    return null;
+  }
+
+  interact(playerPosition, actor = {}) {
+    const normalizedActor = this.normalizeActor(actor);
+    const interaction = this.nearestInteractable(playerPosition);
+    if (!interaction) {
+      this.events.onFeed?.('Nothing nearby accepts that request.', '');
+      return { kind: 'none' };
+    }
+
+    if (interaction.kind === 'object') {
+      return { kind: 'object', loot: interaction.entry };
+    }
+    if (interaction.kind === 'dialogue') {
+      return { kind: 'dialogue', node: interaction.entry };
+    }
+    if (interaction.kind === 'card-battle') {
+      return { kind: 'card-battle', node: interaction.entry };
+    }
+    if (interaction.kind === 'shrine') {
+      const nearestShrine = interaction.entry;
       const activity = this.beginActivity(
         ACTIVITY_TYPES.SHRINE,
         normalizedActor,
-        { id: `shrine:${nearestShrine.roomId}`, roomId: nearestShrine.roomId },
+        { id: nearestShrine.shrineId, roomId: nearestShrine.roomId },
         { requiresProximity: true, inRange: true },
       );
-      if (activity.status === 'denied') return false;
+      if (activity.status === 'denied') return { kind: 'denied' };
       nearestShrine.used = true;
       this.renderer.removeObject(nearestShrine.mesh);
       if (nearestShrine.boon.id === 'salvage-premium') this.payoutMultiplier *= 1.25;
@@ -325,34 +469,16 @@ export class MissionSystem {
       this.events.onLoot?.(this.recoveredValue);
       this.events.onFeed?.(`${nearestShrine.boon.name}: ${nearestShrine.boon.description}`, 'good');
       this.reportProgress();
-      return false;
+      return { kind: 'resolved', activity: 'shrine' };
     }
-
-    const entrance = this.rooms.get(this.mapState.entranceRoomId);
-    const portalDistance = Math.hypot(playerPosition.x - entrance.x, playerPosition.z - entrance.z);
-    if (portalDistance < 3.1) {
+    if (interaction.kind === 'extraction') {
       if (this.recovered.length === 0 && this.processSeized.length === 0) {
         this.events.onFeed?.('Extraction refuses an empty manifest.', 'danger');
-        return false;
+        return { kind: 'denied' };
       }
-      const activity = this.beginActivity(
-        ACTIVITY_TYPES.EXTRACT,
-        normalizedActor,
-        { id: 'passage:extraction', roomId: entrance.id },
-        {
-          requiresProximity: true,
-          inRange: true,
-          // Local prototype resolves extraction immediately. Networked play can
-          // turn this into a proposal without changing who is allowed to start it.
-          requireConsensus: false,
-        },
-      );
-      if (activity.status === 'denied') return false;
-      this.completeActivity(activity, { requested: true });
-      return true;
+      return { kind: 'extraction', entrance: interaction.entry };
     }
-    this.events.onFeed?.('Nothing nearby accepts that request.', '');
-    return false;
+    return { kind: 'none' };
   }
 
   update(delta, playerPosition) {
@@ -361,12 +487,36 @@ export class MissionSystem {
       entry.phase += delta * 1.5;
       entry.mesh.rotation.y += delta * 1.4;
       entry.mesh.position.y = 0.72 + Math.sin(entry.phase) * 0.13;
+      if (entry.resolved && entry.decision === 'leave') entry.mesh.material.opacity = 0.42;
     }
     for (const shrine of this.shrines) {
       if (shrine.used) continue;
       shrine.phase += delta;
       shrine.mesh.userData.core.rotation.y += delta * 0.8;
       shrine.mesh.userData.core.position.y = 1.45 + Math.sin(shrine.phase * 1.7) * 0.12;
+    }
+    for (const node of this.interactionNodes) {
+      if (!node.active || node.used) continue;
+      node.phase += delta;
+      node.mesh.userData.core.rotation.y += delta * (node.type === 'card-battle' ? -0.9 : 0.55);
+      node.mesh.userData.core.position.y = 1.45 + Math.sin(node.phase * 1.4) * 0.16;
+    }
+    const hint = this.nearestInteractable(playerPosition);
+    const hintKey = hint ? `${hint.kind}:${hint.entry?.lootId ?? hint.entry?.nodeId ?? hint.entry?.shrineId ?? 'passage'}` : null;
+    if (hintKey !== this.lastInteractionHint) {
+      this.lastInteractionHint = hintKey;
+      this.events.onInteractionHint?.(hint ? {
+        kind: hint.kind,
+        label: hint.kind === 'object'
+          ? `Inspect ${hint.entry.item.name}`
+          : hint.kind === 'dialogue'
+            ? `Talk to ${hint.entry.speaker}`
+            : hint.kind === 'card-battle'
+              ? `Open card battle: ${hint.entry.title}`
+              : hint.kind === 'shrine'
+                ? `Activate ${hint.entry.boon.name}`
+                : 'Request extraction',
+      } : null);
     }
     this.updateOverlap(playerPosition);
     this.updateRoom(playerPosition);
