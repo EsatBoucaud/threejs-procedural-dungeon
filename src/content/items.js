@@ -34,7 +34,7 @@ function stableNumber(value) {
 }
 
 export function itemForRoom(room, seedValue, options = {}) {
-  const interlaced = options.interlaced ?? room.origin === 'interlace' ?? false;
+  const interlaced = options.interlaced ?? (room.origin === 'interlace');
   const table = interlaced ? INTERLACE_ITEM_TABLE : ITEM_TABLE;
   const weight = Math.max(0, Math.min(1, room.difficulty ?? 0));
   const roomKey = stableNumber(room.id);
