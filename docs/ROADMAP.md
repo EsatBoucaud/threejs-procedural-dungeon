@@ -1,37 +1,49 @@
 # Roadmap
 
-## Build 0.2 — Combat identity
-
-- Add Chilindo and Kindred as the second ranged/melee pair.
-- Replace shared stand-ins with character-specific silhouettes and animation state machines.
-- Add abilities, cooldown UI, stagger rules, revive behavior, and partner AI.
-- Add faction-specific enemy behaviors for A Chave Geral.
-
 ## Build 0.3 — Rooms become places
 
-- Convert corridor intersections into actual wall openings.
-- Add authored room modules that skin generated dimensions.
-- Add local cultural material kits, object pools, signage layers, and sound zones.
-- Add room events that can alter the graph after generation.
+- Convert corridor intersections into actual wall openings and door states.
+- Add authored room modules that skin generated dimensions without replacing the generated graph.
+- Add local material kits, object pools, signage layers, weathering, and sound zones.
+- Add destructible cover, collision-aware props, elevation changes, and room-specific combat affordances.
+- Add room events that can alter, seal, duplicate, or reopen graph connections after generation.
 
 ## Build 0.4 — Interlace as the central system
 
-- Generate the second state independently.
-- Compute spatial intersections and temporary bridges between states.
-- Introduce rare rooms that exist only during overlap.
-- Add extraction instability and loss rules.
-- Make enemy factions cross from either state with different goals.
+- Generate the second server state independently rather than transforming the base state.
+- Compute spatial intersections, temporary bridges, overwritten walls, and unstable shared rooms.
+- Introduce rare rooms, objects, enemies, and routes that exist only during overlap.
+- Add extraction instability, object loss, emergency rerouting, and split-state objectives.
+- Give A Chave Geral processes goals other than direct combat: seizure, audit, route closure, and object substitution.
 
-## Build 0.5 — Economy and institution
+## Build 0.5 — Character depth
 
-- Add persistent inventory and provenance.
-- Add appraisal, Institute retention, resale, and contested ownership.
-- Add the Instituto Travessia headquarters loop.
-- Add A Chave Geral access offers and illegal route selection.
+- Replace procedural stand-ins with the incoming final art for **Sócrates, Zélia, Lia, and Kindred**.
+- Add animation state machines, hit reactions, expressive portraits, and character-specific effects.
+- Add secondary abilities, ultimates, team synergies, revive actions, and lightweight partner AI.
+- Add relationship scenes and run commentary without interrupting the action loop.
+- Preserve Kindred's deliberately unspecified identity and background in all content systems.
 
-## Build 0.6 — Networked backend
+## Build 0.6 — Economy and institution
 
-- Deploy map-state service, signed runs, inventory, and accounts.
-- Add server-authoritative loot/result validation.
-- Add event schedules and route rotations.
-- Preserve offline/static map loading for development and archival builds.
+- Add persistent inventory, provenance, appraisal disputes, and object condition.
+- Expand Instituto Travessia retention, resale, buyback, storage, and contested ownership.
+- Build the Instituto headquarters as a playable between-run space.
+- Add mission selection, loadouts, field permits, risk insurance, and black-market route access.
+- Add A Chave Geral offers that can alter contracts, payouts, access, and future map states.
+
+## Build 0.7 — Testing and platform
+
+- Add deterministic combat replay fixtures and automated browser-play smoke tests.
+- Add controller support, remapping, accessibility settings, pause, and graphics options.
+- Add performance budgets for room count, enemies, lights, particles, and interlaced geometry.
+- Add save migration and local-profile recovery.
+- Publish a stable static testing build for every merged gameplay PR.
+
+## Build 0.8 — Networked backend
+
+- Deploy map-state service, signed runs, inventory, profiles, and accounts.
+- Add server-authoritative loot and result validation without making local development dependent on the server.
+- Add route rotations, shared events, seeded daily contracts, and limited-time interlaces.
+- Add telemetry for room flow, combat balance, extraction decisions, and run failure causes.
+- Preserve offline/static map loading for development, archival builds, and emergency operation.
