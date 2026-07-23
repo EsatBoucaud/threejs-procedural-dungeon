@@ -30,7 +30,7 @@ export class InteractiveRunController extends RunController {
         },
         onExtractionApproved: (session) => {
           if (session.proposal?.resolution?.rolls) this.reportDecisionRoll(session.proposal.resolution);
-          super.attemptExtraction();
+          RunController.prototype.attemptExtraction.call(this);
         },
       },
     );
