@@ -1,106 +1,120 @@
 # Player Workflow Implementation Backlog
 
-This backlog converts `PLAYER_WORKFLOW.md` into a sequence of player-facing implementation tasks. It exists in the repository because GitHub Issues are currently disabled for this project.
+This backlog tracks the player-facing workflow because GitHub Issues are currently disabled for the repository.
 
-## Priority 0 — Correct the field contract
+## Priority 0 — Multiplayer ownership contract
 
-- [ ] Replace the current all-four-at-once run assumption with exactly two deployed operatives.
-- [ ] Lock the active field roster to Zélia, Lia, Chilindo, and Sócrates.
-- [ ] Keep Afonso in headquarters and mission narration only.
-- [ ] Add a run-level `deployedOperativeIds` field containing exactly two IDs.
-- [ ] Preserve health, position, cooldowns, and status per deployed operative.
-- [ ] In solo play, swap direct control while the other operative becomes AI-controlled.
-- [ ] In cooperative play, assign one operative to each player.
+- [x] Support two-player deployment with two characters assigned to each player.
+- [x] Support four-player deployment with one character assigned to each player.
+- [x] Require all four field characters to be assigned exactly once.
+- [x] Lock the active field roster to Zélia, Lia, Chilindo, and Sócrates.
+- [x] Keep Afonso in headquarters and mission narration only.
+- [x] Serialize player mode, local player, ownership, and kit assignments in the run state.
+- [x] Limit the current local runtime roster to the characters owned by the selected local player.
+- [x] Make `Q` swap between the local player's assigned pair in two-player testing.
+- [x] Disable ordinary swapping for a one-character four-player local assignment.
+- [ ] Add actual remote-player entities and network ownership replication.
+- [ ] Preserve each simultaneously present character's independent world position.
+- [ ] Add reconnect and temporary AI takeover behavior.
 
-Acceptance test: a run cannot begin with fewer or more than two deployed operatives.
+Acceptance test: the deployment validator accepts exactly two characters per player in 2P and exactly one per player in 4P.
 
-## Priority 1 — Headquarters to field
+## Priority 1 — Character identity versus combat kit
 
-- [ ] Headquarters opens with one primary action: authorize a passage.
-- [ ] Route choice precedes operative choice.
-- [ ] Route preview shows safe window, expected Chave Geral response, reward profile, and one known uncertainty.
-- [ ] Operative selection shows role, primary behavior, active ability, partner behavior, and pair friction/trust line.
-- [ ] First run exposes only the intended melee/ranged tutorial pair while keeping the other two visible as assigned elsewhere.
-- [ ] Loadout confirmation states carrying capacity, recovery allowance, extraction rule, and Institute retention before deployment.
-- [ ] Afonso briefing is short and optional questions do not block deployment.
+- [x] Separate the four character identities from combat-kit definitions.
+- [x] Allow any character to equip any current combat kit.
+- [x] Allow duplicate combat kits.
+- [x] Remove mandatory melee/ranged balance from validation.
+- [x] Show the chosen combat family and kit in deployment.
+- [x] Keep character color, name, physical modifiers, and field notes independent from the chosen kit.
+- [ ] Add explicit kit tradeoffs to the deployment cards.
+- [ ] Add more combat kits without tying them to new characters.
+- [ ] Add character-specific passive choices that do not override player-selected combat style.
 
-Acceptance test: an experienced player can move from launch to field control in under 90 seconds.
+Acceptance test: an all-ranged or all-melee four-character composition passes validation and reaches the passage confirmation state.
 
-## Priority 2 — Solo partner play
+## Priority 2 — Headquarters to field
 
-- [ ] Follow command.
-- [ ] Hold command.
-- [ ] Focus-target command.
-- [ ] Recover/revive command.
-- [ ] Partner avoids known hazards.
-- [ ] Partner uses nearby cover.
-- [ ] Partner maintains role-appropriate distance.
-- [ ] Partner does not make consequential object choices autonomously.
-- [ ] Automatic control transfer when the active operative falls.
+- [x] Route choice precedes multiplayer deployment.
+- [x] Add a deployment screen with player-mode selection.
+- [x] Group character slots by player ownership.
+- [x] Add a local-player test view selector.
+- [x] Show composition without grading it.
+- [ ] Add party-ready state and confirmation from every connected player.
+- [ ] Add Afonso's concise route-specific briefing after ownership and kits are locked.
+- [ ] Add object capacity, recovery allowance, extraction rule, and retention to final confirmation.
+- [ ] Target launch-to-field time below 90 seconds for returning players.
 
-Acceptance test: the player can deliberately position the partner before entering a combat room and can recover from one operative falling.
+## Priority 3 — Two-player swap implementation
 
-## Priority 3 — First-room teaching sequence
+- [x] Local prototype only cycles through characters assigned to the local player.
+- [x] Character health and cooldown arrays remain attached to the resolved local characters.
+- [ ] Maintain both of a player's characters as independent run entities rather than one shared player transform.
+- [ ] Define whether the reserve character is present, following, temporarily withdrawn, or swapped through the passage system.
+- [ ] Add swap anticipation, transition effect, invulnerability rules, and cooldown.
+- [ ] Add incapacitated-reserve restrictions.
+- [ ] Add simultaneous swap handling for both players.
+- [ ] Add controller and keyboard bindings for Player 1 and Player 2 local testing.
+
+## Priority 4 — Four-player runtime
+
+- [ ] Spawn one directly controlled entity per connected player.
+- [ ] Replicate movement, aim, attack, ability, dodge, health, and status.
+- [ ] Add teammate markers and ownership-safe HUD.
+- [ ] Add revive and recovery states.
+- [ ] Add disconnect grace period and AI takeover.
+- [ ] Restore ownership cleanly after reconnection.
+- [ ] Ensure no player can ordinary-swap into another player's character.
+
+## Priority 5 — First-room teaching sequence
 
 - [ ] Portal-threshold movement teaching occurs in-engine.
-- [ ] Stable first room contains no enemies.
-- [ ] First room teaches interaction, room exits, map relationship, Afonso commentary, and object inspection.
-- [ ] First combat room teaches attack, dodge, active ability, partner behavior, and real cover.
-- [ ] Tutorial feedback reacts after successful player behavior instead of pausing combat.
+- [ ] First stable room teaches exits, map relationship, interaction, and inspection.
+- [ ] First combat room teaches attacks, abilities, dodge, teammate reading, and real cover.
+- [ ] Two-player tutorial teaches ownership-scoped swapping.
+- [ ] Four-player tutorial teaches teammate identification without implying character swapping.
+- [ ] Tutorial feedback reacts after successful actions instead of pausing combat.
 
-Acceptance test: a new player reaches and clears the first combat room without reading an external controls list.
-
-## Priority 4 — Object meaning and recovery
+## Priority 6 — Object meaning and collective decisions
 
 - [ ] Object panel shows Institute appraisal.
 - [ ] Object panel shows network relevance to Celeste or A Chave Geral.
 - [ ] Object panel shows local human meaning or claim.
-- [ ] Actions: recover, inspect further, leave, mark for return.
-- [ ] Every action is recorded in the run result.
-- [ ] Carried objects remain visible as a limited-capacity manifest.
+- [ ] Actions include recover, inspect, leave, and mark for return.
+- [ ] Ordinary collection does not require a vote.
+- [ ] Consequential object choices can trigger agree, oppose, or abstain responses.
+- [ ] Unresolved disagreement can use a visible, modified die roll.
+- [ ] Record the disagreement and later character reactions.
 
-Acceptance test: the first recovered object is understandable as more than currency.
-
-## Priority 5 — Safe-window choice
+## Priority 7 — Safe-window and interlace choice
 
 - [ ] Add an early warning before the final countdown.
-- [ ] Keep the return route physically available during the warning.
+- [ ] Keep the return route physically available while the team decides.
 - [ ] Early extraction counts as a successful run.
-- [ ] Early extraction debrief records unresolved objectives without shaming the player.
 - [ ] Staying late visibly opens the interlace branch.
+- [ ] Interlace immediately creates one readable opportunity and one readable danger.
+- [ ] Composition consequences remain readable after visual disruption.
 
-Acceptance test: the player can intentionally complete a safe early run or intentionally stay for the interlace.
+## Priority 8 — Debrief and redeployment
 
-## Priority 6 — Interlace and antagonist consequence
+- [ ] Field-result layer.
+- [ ] Institute-accounting layer.
+- [ ] Object-record layer.
+- [ ] Narrative-contradiction layer.
+- [ ] First archive decision: sell, keep, dispute, or mark for return.
+- [ ] Primary action after filing: authorize another passage.
 
-- [ ] Interlace immediately creates one readable opportunity.
-- [ ] Interlace immediately creates one readable danger.
-- [ ] Remote rooms and objects are visually distinct without hiding combat information.
-- [ ] First route introduces one major A Chave Geral process.
-- [ ] The process demonstrates a mission consequence before functioning as a health-bar encounter.
-- [ ] Extraction remains available unless the assigned process explicitly locks it.
+## Current implementation boundary
 
-Acceptance test: a new player can explain what changed after interlace and why the antagonist matters to the mission.
-
-## Priority 7 — Debrief and redeployment
-
-- [ ] Field result layer.
-- [ ] Institute accounting layer.
-- [ ] Object record layer.
-- [ ] Narrative contradiction layer.
-- [ ] First archive decision: sell, keep, dispute classification, or mark for return.
-- [ ] Primary action after filing: authorize next passage.
-
-Acceptance test: the player understands what happened, what the Institute claims happened, and what to do next.
+The current branch implements the deployment contract, player ownership data, unrestricted kit composition, local-client roster resolution, and deployment UI. It does **not** yet implement networked two-player or four-player simulation. That work begins at Priority 3 and Priority 4.
 
 ## Do not expand before completion
 
-Until the above workflow plays cleanly from beginning to end, do not prioritize:
+Until ownership, swapping, four-player runtime, and the first-run workflow play cleanly, do not prioritize:
 
 - additional route names;
 - additional major processes;
 - more permanent currencies;
 - larger procedural room counts;
 - more upgrade tiers;
-- backend synchronization;
-- final art integration beyond what is needed to read the workflow.
+- final backend synchronization beyond what multiplayer ownership requires.
