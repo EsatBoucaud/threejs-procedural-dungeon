@@ -1,5 +1,6 @@
 import './ui/styles.css';
 import './ui/headquarters.css';
+import './ui/processes.css';
 import { seedForRoute } from './content/routes.js';
 import { generateMapState, validateMapState } from './core/dungeon-generator.js';
 import { RunController } from './game/run-controller.js';
@@ -130,7 +131,10 @@ function renderContract(contract, status) {
   elements.contractDescription.textContent = contract.description;
   elements.briefContractTitle.textContent = contract.title;
   const routePay = mapState?.route?.rewardMultiplier ?? 1;
-  elements.briefContractCopy.textContent = `${contract.description} Completion pays ${formatCurrency(contract.bonus)}, a ${contract.riskMultiplier.toFixed(2)}× contract multiplier, and ${routePay.toFixed(2)}× route accounting.`;
+  const processCopy = run?.majorProcess
+    ? ` Expected response: ${run.majorProcess.name}, ${run.majorProcess.role.toLowerCase()}.`
+    : '';
+  elements.briefContractCopy.textContent = `${contract.description} Completion pays ${formatCurrency(contract.bonus)}, a ${contract.riskMultiplier.toFixed(2)}× contract multiplier, and ${routePay.toFixed(2)}× route accounting.${processCopy}`;
   if (!status) return;
   elements.contractChecks.replaceChildren();
   for (const check of status.checks) {
@@ -190,7 +194,10 @@ function createRunEvents() {
       document.body.classList.add('interlaced');
       elements.interlaceFlash.classList.add('active');
       window.setTimeout(() => elements.interlaceFlash.classList.remove('active'), 1100);
-      feed(`${details.rooms} remote rooms, ${details.connections} remote links, ${details.bridges} bridges, ${details.overlaps} overlaps.`, 'danger');
+      feed(
+        `${details.rooms} remote rooms, ${details.connections} remote links, ${details.bridges} bridges, ${details.overlaps} overlaps. ${details.majorProcess?.name ?? 'A Chave Geral'} is assigned to the response.`,
+        'danger',
+      );
     },
     onFeed: feed,
     onFinish: showDebrief,
@@ -250,7 +257,7 @@ function showDebrief(result) {
   lastResult = result;
   elements.debriefTitle.textContent = result.success ? 'EXTRACTION COMPLETE' : 'FIELD TEAM LOST';
   const seizureCopy = result.seized.length > 0
-    ? ` A Chave Geral seized ${result.seized.map((item) => item.name).join(', ')} at the threshold.`
+    ? ` A Chave Geral retained ${result.seized.map((item) => item.name).join(', ')} outside the recovered filing.`
     : '';
   const retentionCopy = result.archiveRecord?.held?.length > 0
     ? ` Instituto Travessia retained ${result.archiveRecord.held.map((item) => item.name).join(', ')} under its object allowance.`
@@ -258,9 +265,12 @@ function showDebrief(result) {
   const remoteCopy = result.interlaceTriggered
     ? ` ${result.remoteObjects} remote object${result.remoteObjects === 1 ? '' : 's'} and ${result.remoteRoomsCleared} remote rooms survived accounting.`
     : '';
+  const processCopy = result.majorProcessName
+    ? ` ${result.majorProcessName} was ${result.majorProcessDefeated ? 'terminated in the field' : 'left active when the run closed'}.`
+    : '';
   elements.debriefCopy.textContent = result.success
-    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back after ${result.roomsCleared} stabilized rooms.${remoteCopy}${seizureCopy}${retentionCopy}`
-    : 'The passage closed around the team. Both generated map states remain reproducible; the loss does not.';
+    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back after ${result.roomsCleared} stabilized rooms.${remoteCopy}${processCopy}${seizureCopy}${retentionCopy}`
+    : `The passage closed around the team. ${result.majorProcessName ?? 'The assigned process'} remained ${result.majorProcessDefeated ? 'terminated' : 'active'}. Both generated map states remain reproducible; the loss does not.`;
   elements.debriefValue.textContent = formatCurrency(result.value);
   elements.debriefCut.textContent = formatCurrency(result.instituteCut);
   elements.debriefBonus.textContent = formatCurrency(result.contractBonus);
