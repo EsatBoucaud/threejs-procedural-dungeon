@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ROOM_SKINS } from '../content/room-skins.js';
-import { buildPortal, buildRoomLayer } from './scene-factory.js';
+import { buildInterlaceFeatures, buildPortal, buildRoomLayer } from './scene-factory.js';
 import {
   enemyMesh,
   enemyProjectileMesh,
@@ -89,7 +89,19 @@ export class WorldRenderer {
     this.interlaceWorld.visible = false;
     this.scene.fog.color.setHex(0x071018);
     buildRoomLayer(this.world, state.rooms, state.connections, ROOM_SKINS.travessia, false);
-    buildRoomLayer(this.interlaceWorld, state.interlace.rooms, [], ROOM_SKINS.interlace, true);
+    buildRoomLayer(
+      this.interlaceWorld,
+      state.interlace.rooms,
+      state.interlace.connections ?? [],
+      ROOM_SKINS.interlace,
+      true,
+    );
+    buildInterlaceFeatures(
+      this.interlaceWorld,
+      state.interlace.overlaps ?? [],
+      state.interlace.bridges ?? [],
+      ROOM_SKINS.interlace,
+    );
     const entrance = state.rooms.find((room) => room.id === state.entranceRoomId);
     this.portalMesh = buildPortal(entrance, ROOM_SKINS.travessia);
     this.world.add(this.portalMesh);
@@ -173,6 +185,18 @@ export class WorldRenderer {
     if (this.portalMesh) {
       this.portalMesh.rotation.y += delta * 0.32;
       this.portalMesh.scale.setScalar(1 + Math.sin(performance.now() * 0.0024) * 0.05);
+    }
+    if (this.interlaceWorld.visible) {
+      const now = performance.now() * 0.001;
+      for (const object of this.interlaceWorld.children) {
+        if (typeof object.userData.phase === 'number') {
+          object.rotation.z += delta * 0.22;
+          object.material.opacity = 0.45 + Math.sin(now * 2.1 + object.userData.phase) * 0.2;
+        }
+        if (object.userData.bridge) {
+          object.material.emissiveIntensity = 0.7 + Math.sin(now * 3 + object.userData.bridge.stability * 7) * 0.25;
+        }
+      }
     }
     if (this.playerMesh && aimPosition) {
       this.playerMesh.rotation.y = Math.atan2(

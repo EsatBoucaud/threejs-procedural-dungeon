@@ -10,6 +10,7 @@ export function makeMaterial(color, options = {}) {
     emissive: options.emissive ?? 0x000000,
     emissiveIntensity: options.emissiveIntensity ?? 0,
     side: THREE.DoubleSide,
+    depthWrite: options.depthWrite ?? true,
   });
 }
 
@@ -55,9 +56,10 @@ export function buildRoomLayer(group, rooms, connections, skin, ghost) {
     opacity: ghost ? 0.28 : 1,
     emissive: ghost ? skin.portal : 0x000000,
     emissiveIntensity: ghost ? 0.18 : 0,
+    depthWrite: !ghost,
   });
-  const floorAccent = makeMaterial(skin.floorSecondary, { transparent: ghost, opacity: ghost ? 0.22 : 1 });
-  const wallMaterial = makeMaterial(skin.wall, { transparent: ghost, opacity: ghost ? 0.22 : 1 });
+  const floorAccent = makeMaterial(skin.floorSecondary, { transparent: ghost, opacity: ghost ? 0.22 : 1, depthWrite: !ghost });
+  const wallMaterial = makeMaterial(skin.wall, { transparent: ghost, opacity: ghost ? 0.22 : 1, depthWrite: !ghost });
   const trimMaterial = makeMaterial(skin.trim, {
     metalness: 0.62,
     roughness: 0.38,
@@ -65,6 +67,7 @@ export function buildRoomLayer(group, rooms, connections, skin, ghost) {
     opacity: ghost ? 0.38 : 1,
     emissive: ghost ? skin.trim : 0x000000,
     emissiveIntensity: ghost ? 0.25 : 0,
+    depthWrite: !ghost,
   });
 
   for (const room of rooms) {
@@ -103,6 +106,66 @@ export function buildRoomLayer(group, rooms, connections, skin, ghost) {
       corridor.position.set(transform.x, -0.22, transform.z);
       corridor.rotation.y = -transform.angle;
       corridor.receiveShadow = true;
+      group.add(corridor);
+    }
+  }
+}
+
+export function buildInterlaceFeatures(group, overlaps, bridges, skin) {
+  const overlapMaterial = makeMaterial(skin.portal, {
+    transparent: true,
+    opacity: 0.18,
+    emissive: skin.portal,
+    emissiveIntensity: 0.75,
+    roughness: 0.24,
+    metalness: 0.18,
+    depthWrite: false,
+  });
+  const fractureMaterial = new THREE.MeshBasicMaterial({
+    color: skin.trim,
+    transparent: true,
+    opacity: 0.72,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  for (const overlap of overlaps) {
+    const plate = box(overlap.width, 0.08, overlap.depth, overlapMaterial);
+    plate.position.set(overlap.x, 0.04, overlap.z);
+    plate.userData.overlap = overlap;
+    group.add(plate);
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(
+        Math.max(0.8, Math.min(overlap.width, overlap.depth) * 0.18),
+        Math.max(1.05, Math.min(overlap.width, overlap.depth) * 0.29),
+        32,
+      ),
+      fractureMaterial,
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(overlap.x, 0.11, overlap.z);
+    ring.userData.phase = overlap.dressingSeed % 1000;
+    group.add(ring);
+  }
+
+  const bridgeMaterial = makeMaterial(skin.trim, {
+    transparent: true,
+    opacity: 0.56,
+    emissive: skin.portal,
+    emissiveIntensity: 0.9,
+    metalness: 0.45,
+    roughness: 0.28,
+    depthWrite: false,
+  });
+  for (const bridge of bridges) {
+    const points = bridge.corridor.points;
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const transform = segmentTransform(points[index], points[index + 1]);
+      if (transform.length < 0.1) continue;
+      const corridor = box(transform.length + 0.8, 0.16, bridge.corridor.width, bridgeMaterial);
+      corridor.position.set(transform.x, 0.02, transform.z);
+      corridor.rotation.y = -transform.angle;
+      corridor.userData.bridge = bridge;
       group.add(corridor);
     }
   }
