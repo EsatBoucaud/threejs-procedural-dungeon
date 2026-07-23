@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { itemForRoom } from '../content/items.js';
+import { ACTIVITY_TYPES, ActivityAuthority } from './activity-authority.js';
 
 const BOONS = [
   { id: 'medical-waiver', name: 'MEDICAL WAIVER', description: 'Restores every operative and increases future healing.' },
@@ -44,10 +45,65 @@ export class MissionSystem {
     this.remotePayoutMultiplier = 1;
     this.interlaceActive = false;
     this.overlapsVisited = new Set();
+    this.activityAuthority = new ActivityAuthority(mapState.deployment, {
+      onActivity: (activity) => this.events.onActivity?.(activity),
+    });
 
     for (const room of this.baseRooms.filter((entry) => entry.type === 'shrine')) {
       this.createShrine(room, false);
     }
+  }
+
+  defaultActor() {
+    const deployment = this.mapState.deployment ?? {};
+    const playerId = deployment.localPlayerId ?? deployment.players?.[0]?.id ?? 'player-1';
+    const assignment = deployment.assignments?.find((entry) => entry.playerId === playerId)
+      ?? deployment.assignments?.[0];
+    return {
+      playerId,
+      characterId: assignment?.characterId ?? 'unknown-character',
+      assignmentId: assignment?.assignmentId ?? 'unknown-assignment',
+    };
+  }
+
+  normalizeActor(actor = {}) {
+    return { ...this.defaultActor(), ...actor };
+  }
+
+  beginActivity(type, actor, target, context = {}) {
+    const normalizedActor = this.normalizeActor(actor);
+    const attempt = this.activityAuthority.attempt(type, normalizedActor, target, context);
+    if (attempt.status === 'denied') {
+      this.events.onFeed?.(
+        `${normalizedActor.characterId} could not begin ${type}: ${attempt.denialReasons.join(', ')}.`,
+        'danger',
+      );
+    }
+    return attempt;
+  }
+
+  completeActivity(activity, resolution = {}) {
+    if (!activity || activity.status === 'denied') return activity;
+    this.activityAuthority.resolve(activity.activityId, {
+      status: 'completed',
+      ...resolution,
+    });
+    return activity;
+  }
+
+  // Dialogue, card battles, puzzles, negotiation, hacking, route actions, and
+  // later authored interactions all enter through this same authority path.
+  // No activity is reserved for a character, kit, combat family, or player seat.
+  startFieldActivity(type, actor, target, context = {}) {
+    return this.beginActivity(type, actor, target, context);
+  }
+
+  resolveFieldActivity(activityId, resolution = {}) {
+    return this.activityAuthority.resolve(activityId, resolution);
+  }
+
+  activitySnapshot() {
+    return this.activityAuthority.snapshot();
   }
 
   createShrine(room, remote) {
@@ -125,6 +181,7 @@ export class MissionSystem {
       remoteVault: this.remoteVaultCleared,
       overlaps: this.overlapsVisited.size,
       processSeized: this.processSeized.length,
+      activityParticipation: this.activitySnapshot().participation,
       ...extra,
     };
   }
@@ -174,8 +231,8 @@ export class MissionSystem {
     });
     this.events.onFeed?.(
       interlaced
-        ? 'A contradictory object has stabilized long enough to be stolen. Press E.'
-        : 'Object density has become negotiable. Press E near the recovered object.',
+        ? 'A contradictory object has stabilized. Any player may inspect or recover it.'
+        : 'Object density has become negotiable. Any player in range may act.',
       interlaced ? 'danger' : '',
     );
   }
@@ -214,17 +271,34 @@ export class MissionSystem {
     return items;
   }
 
-  interact(playerPosition) {
+  interact(playerPosition, actor = {}) {
+    const normalizedActor = this.normalizeActor(actor);
     const nearestLoot = this.loot
       .filter((entry) => !entry.collected)
       .sort((a, b) => a.position.distanceTo(playerPosition) - b.position.distanceTo(playerPosition))[0];
     if (nearestLoot && nearestLoot.position.distanceTo(playerPosition) < 2.4) {
+      const activity = this.beginActivity(
+        ACTIVITY_TYPES.LOOT,
+        normalizedActor,
+        {
+          id: nearestLoot.item.instanceId ?? `loot:${nearestLoot.roomId}`,
+          roomId: nearestLoot.roomId,
+          itemName: nearestLoot.item.name,
+        },
+        { requiresProximity: true, inRange: true },
+      );
+      if (activity.status === 'denied') return false;
       nearestLoot.collected = true;
       this.renderer.removeObject(nearestLoot.mesh);
-      this.recovered.push(nearestLoot.item);
+      this.recovered.push({
+        ...nearestLoot.item,
+        recoveredByPlayerId: normalizedActor.playerId,
+        recoveredByCharacterId: normalizedActor.characterId,
+      });
+      this.completeActivity(activity, { itemName: nearestLoot.item.name });
       this.events.onLoot?.(this.recoveredValue);
       this.events.onFeed?.(
-        `Recovered: ${nearestLoot.item.name} — ₢ ${nearestLoot.item.value} / ${nearestLoot.item.condition}.`,
+        `${normalizedActor.characterId} recovered ${nearestLoot.item.name} — ₢ ${nearestLoot.item.value} / ${nearestLoot.item.condition}.`,
         nearestLoot.item.origin === 'interlace' ? 'danger' : 'good',
       );
       this.reportProgress();
@@ -235,10 +309,18 @@ export class MissionSystem {
       .filter((entry) => !entry.used)
       .sort((a, b) => a.position.distanceTo(playerPosition) - b.position.distanceTo(playerPosition))[0];
     if (nearestShrine && nearestShrine.position.distanceTo(playerPosition) < 2.8) {
+      const activity = this.beginActivity(
+        ACTIVITY_TYPES.SHRINE,
+        normalizedActor,
+        { id: `shrine:${nearestShrine.roomId}`, roomId: nearestShrine.roomId },
+        { requiresProximity: true, inRange: true },
+      );
+      if (activity.status === 'denied') return false;
       nearestShrine.used = true;
       this.renderer.removeObject(nearestShrine.mesh);
       if (nearestShrine.boon.id === 'salvage-premium') this.payoutMultiplier *= 1.25;
       if (nearestShrine.boon.id === 'dual-citizenship') this.remotePayoutMultiplier *= 1.4;
+      this.completeActivity(activity, { boonId: nearestShrine.boon.id });
       this.events.onBoon?.(nearestShrine.boon);
       this.events.onLoot?.(this.recoveredValue);
       this.events.onFeed?.(`${nearestShrine.boon.name}: ${nearestShrine.boon.description}`, 'good');
@@ -253,6 +335,20 @@ export class MissionSystem {
         this.events.onFeed?.('Extraction refuses an empty manifest.', 'danger');
         return false;
       }
+      const activity = this.beginActivity(
+        ACTIVITY_TYPES.EXTRACT,
+        normalizedActor,
+        { id: 'passage:extraction', roomId: entrance.id },
+        {
+          requiresProximity: true,
+          inRange: true,
+          // Local prototype resolves extraction immediately. Networked play can
+          // turn this into a proposal without changing who is allowed to start it.
+          requireConsensus: false,
+        },
+      );
+      if (activity.status === 'denied') return false;
+      this.completeActivity(activity, { requested: true });
       return true;
     }
     this.events.onFeed?.('Nothing nearby accepts that request.', '');
