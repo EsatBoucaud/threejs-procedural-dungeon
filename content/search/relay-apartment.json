@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "relay-apartment",
+  "title": "The Relay Apartment",
+  "image": "./assets/search/relay-apartment.svg",
+  "durationSeconds": 45,
+  "capacity": 6,
+  "hintCount": 3,
+  "teammateCombat": {
+    "mode": "arena",
+    "operative": "Zélia",
+    "estimatedSeconds": 45,
+    "description": "The search window is synchronized to the teammate's arena encounter."
+  },
+  "objects": [
+    {
+      "id": "vintage-camera",
+      "name": "Vintage Camera",
+      "value": 210,
+      "category": "collectible",
+      "target": true,
+      "icon": "CAM",
+      "hitbox": { "x": 0.075, "y": 0.605, "w": 0.105, "h": 0.14 },
+      "consequences": {
+        "dialogueFacts": ["camera_removed"],
+        "notes": "The resident may recognize it later."
+      }
+    },
+    {
+      "id": "pocket-watch",
+      "name": "Gold Pocket Watch",
+      "value": 165,
+      "category": "personal",
+      "target": true,
+      "icon": "WCH",
+      "hitbox": { "x": 0.405, "y": 0.215, "w": 0.085, "h": 0.14 },
+      "morality": {
+        "severity": "medium",
+        "prompt": "The watch is engraved with a family name. Are you sure you want to take it? There may be consequences."
+      },
+      "consequences": {
+        "residentTrust": -1,
+        "dialogueFacts": ["family_watch_taken"]
+      }
+    },
+    {
+      "id": "medicine-bottle",
+      "name": "Prescription Medicine",
+      "value": 85,
+      "category": "essential",
+      "target": true,
+      "icon": "MED",
+      "hitbox": { "x": 0.59, "y": 0.59, "w": 0.07, "h": 0.16 },
+      "morality": {
+        "severity": "high",
+        "prompt": "This medicine is labeled for a resident in the apartment. Taking it may affect a later dialogue and their survival. Continue?"
+      },
+      "consequences": {
+        "residentTrust": -3,
+        "dialogueFacts": ["medicine_taken"],
+        "arenaModifiers": ["resident援助_unavailable"]
+      }
+    },
+    {
+      "id": "family-photo",
+      "name": "Family Photograph",
+      "value": 110,
+      "category": "personal",
+      "target": true,
+      "icon": "PIC",
+      "hitbox": { "x": 0.75, "y": 0.42, "w": 0.135, "h": 0.19 },
+      "morality": {
+        "severity": "high",
+        "prompt": "This has little market value compared with its personal value. Taking it may permanently alter the resident's dialogue. Continue?"
+      },
+      "consequences": {
+        "residentTrust": -2,
+        "dialogueFacts": ["family_photo_taken"]
+      }
+    },
+    {
+      "id": "seizure-warrant",
+      "name": "Seizure Warrant",
+      "value": 40,
+      "category": "evidence",
+      "target": true,
+      "icon": "DOC",
+      "hitbox": { "x": 0.235, "y": 0.14, "w": 0.14, "h": 0.15 },
+      "consequences": {
+        "cardUnlocks": ["present-warrant"],
+        "dialogueFacts": ["warrant_found"],
+        "notes": "Unlocks a card and a dialogue option instead of providing high sale value."
+      }
+    },
+    {
+      "id": "power-regulator",
+      "name": "Power Regulator",
+      "value": 240,
+      "category": "utility",
+      "target": true,
+      "icon": "PWR",
+      "hitbox": { "x": 0.69, "y": 0.655, "w": 0.14, "h": 0.15 },
+      "morality": {
+        "severity": "medium",
+        "prompt": "Removing this component will cut power to another room while your teammate is fighting. Take it anyway?"
+      },
+      "consequences": {
+        "arenaModifiers": ["lights_disabled", "enemy_speed_plus_15"],
+        "dialogueFacts": ["power_regulator_removed"]
+      }
+    },
+    {
+      "id": "silver-key",
+      "name": "Silver Key",
+      "value": 72,
+      "category": "key-item",
+      "target": true,
+      "icon": "KEY",
+      "hitbox": { "x": 0.345, "y": 0.39, "w": 0.075, "h": 0.12 },
+      "consequences": {
+        "dialogueFacts": ["locked_drawer_access"],
+        "notes": "Can open an alternate dialogue evidence branch."
+      }
+    },
+    {
+      "id": "field-radio",
+      "name": "Field Radio",
+      "value": 130,
+      "category": "communications",
+      "target": true,
+      "icon": "RAD",
+      "hitbox": { "x": 0.475, "y": 0.69, "w": 0.14, "h": 0.14 },
+      "consequences": {
+        "cardUnlocks": ["intercept-channel"],
+        "dialogueFacts": ["radio_frequency_known"]
+      }
+    },
+    {
+      "id": "old-mobile-phone",
+      "name": "Old Mobile Phone",
+      "value": 100,
+      "category": "evidence",
+      "target": true,
+      "icon": "TEL",
+      "hitbox": { "x": 0.545, "y": 0.34, "w": 0.075, "h": 0.14 },
+      "consequences": {
+        "dialogueFacts": ["message_thread_recovered"],
+        "cardUnlocks": ["predict-route"]
+      }
+    },
+    {
+      "id": "ceramic-bowl",
+      "name": "Ceramic Bowl",
+      "value": 60,
+      "category": "household",
+      "target": true,
+      "icon": "BWL",
+      "hitbox": { "x": 0.175, "y": 0.505, "w": 0.09, "h": 0.12 },
+      "consequences": {}
+    },
+    {
+      "id": "paperback-book",
+      "name": "Paperback Book",
+      "value": 0,
+      "category": "clutter",
+      "target": false,
+      "icon": "---",
+      "hitbox": { "x": 0.29, "y": 0.77, "w": 0.12, "h": 0.09 },
+      "consequences": {}
+    },
+    {
+      "id": "desk-lamp",
+      "name": "Desk Lamp",
+      "value": 0,
+      "category": "clutter",
+      "target": false,
+      "icon": "---",
+      "hitbox": { "x": 0.82, "y": 0.18, "w": 0.1, "h": 0.2 },
+      "consequences": {}
+    }
+  ]
+}
