@@ -16,10 +16,17 @@ const EMPTY_PROFILE = {
   unlocks: ['socrates', 'zelia-amato', 'lia', 'kindred'],
   upgrades: [],
   statistics: {
+    majorProcessesDefeated: 0,
     auditorsDefeated: 0,
     overlapsVisited: 0,
     objectsSeized: 0,
     remoteVaultsCleared: 0,
+    processDefeats: {
+      auditor: 0,
+      'seizure-chief': 0,
+      'route-runner': 0,
+      warden: 0,
+    },
   },
 };
 
@@ -28,6 +35,7 @@ function rankForExperience(experience) {
 }
 
 function normalizeProfile(stored) {
+  const storedStatistics = stored?.statistics ?? {};
   const profile = {
     ...structuredClone(EMPTY_PROFILE),
     ...stored,
@@ -35,7 +43,11 @@ function normalizeProfile(stored) {
     upgrades: Array.isArray(stored?.upgrades) ? stored.upgrades : [],
     statistics: {
       ...structuredClone(EMPTY_PROFILE.statistics),
-      ...(stored?.statistics ?? {}),
+      ...storedStatistics,
+      processDefeats: {
+        ...structuredClone(EMPTY_PROFILE.statistics.processDefeats),
+        ...(storedStatistics.processDefeats ?? {}),
+      },
     },
   };
   profile.rank = rankForExperience(profile.experience);
@@ -78,17 +90,21 @@ export function recordRun(result) {
       + (result.remoteRoomsCleared ?? 0) * 24
       + (result.interlaceTriggered ? 80 : 0)
       + (result.contractComplete ? 150 : 0)
-      + (result.auditorDefeated ? 180 : 0)
+      + (result.majorProcessDefeated ? 180 : 0)
       + (result.remoteVaultCleared ? 160 : 0),
   );
   profile.rank = rankForExperience(profile.experience);
   profile.bestPayout = Math.max(profile.bestPayout, result.payout);
   profile.lastSeed = result.seed;
   profile.lastRouteId = result.routeId ?? profile.lastRouteId;
-  profile.statistics.auditorsDefeated += result.auditorDefeated ? 1 : 0;
+  profile.statistics.majorProcessesDefeated += result.majorProcessDefeated ? 1 : 0;
+  profile.statistics.auditorsDefeated += result.majorProcessId === 'auditor' && result.majorProcessDefeated ? 1 : 0;
   profile.statistics.overlapsVisited += result.overlapsVisited ?? 0;
   profile.statistics.objectsSeized += result.seized?.length ?? 0;
   profile.statistics.remoteVaultsCleared += result.remoteVaultCleared ? 1 : 0;
+  if (result.majorProcessId && result.majorProcessDefeated) {
+    profile.statistics.processDefeats[result.majorProcessId] = (profile.statistics.processDefeats[result.majorProcessId] ?? 0) + 1;
+  }
   return saveProfile(profile);
 }
 
