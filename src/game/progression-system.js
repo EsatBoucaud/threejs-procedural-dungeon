@@ -1,27 +1,64 @@
-const PROFILE_KEY = 'abrir.profile.v1';
+const PROFILE_KEY = 'abrir.profile.v2';
+const LEGACY_PROFILE_KEY = 'abrir.profile.v1';
 
 const EMPTY_PROFILE = {
-  version: 1,
+  version: 2,
   rank: 1,
   experience: 0,
   scrip: 0,
   successfulRuns: 0,
   failedRuns: 0,
   recoveredObjects: 0,
+  remoteObjects: 0,
   bestPayout: 0,
   lastSeed: null,
+  lastRouteId: null,
   unlocks: ['socrates', 'zelia-amato', 'lia', 'kindred'],
+  upgrades: [],
+  statistics: {
+    auditorsDefeated: 0,
+    overlapsVisited: 0,
+    objectsSeized: 0,
+    remoteVaultsCleared: 0,
+  },
 };
 
 function rankForExperience(experience) {
   return Math.max(1, Math.floor(Math.sqrt(Math.max(0, experience) / 180)) + 1);
 }
 
+function normalizeProfile(stored) {
+  const profile = {
+    ...structuredClone(EMPTY_PROFILE),
+    ...stored,
+    version: 2,
+    upgrades: Array.isArray(stored?.upgrades) ? stored.upgrades : [],
+    statistics: {
+      ...structuredClone(EMPTY_PROFILE.statistics),
+      ...(stored?.statistics ?? {}),
+    },
+  };
+  profile.rank = rankForExperience(profile.experience);
+  return profile;
+}
+
+export function saveProfile(profile) {
+  const normalized = normalizeProfile(profile);
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(normalized));
+  } catch {
+    // Persistence is an adapter and may be blocked by browser policy.
+  }
+  return normalized;
+}
+
 export function loadProfile() {
   try {
-    const stored = JSON.parse(localStorage.getItem(PROFILE_KEY) ?? 'null');
-    if (!stored || stored.version !== 1) return structuredClone(EMPTY_PROFILE);
-    return { ...structuredClone(EMPTY_PROFILE), ...stored };
+    const current = JSON.parse(localStorage.getItem(PROFILE_KEY) ?? 'null');
+    if (current) return normalizeProfile(current);
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_PROFILE_KEY) ?? 'null');
+    if (legacy) return saveProfile(legacy);
+    return structuredClone(EMPTY_PROFILE);
   } catch {
     return structuredClone(EMPTY_PROFILE);
   }
@@ -29,26 +66,58 @@ export function loadProfile() {
 
 export function recordRun(result) {
   const profile = loadProfile();
+  const routeMultiplier = result.routeRewardMultiplier ?? 1;
   profile.successfulRuns += result.success ? 1 : 0;
   profile.failedRuns += result.success ? 0 : 1;
   profile.recoveredObjects += result.recovered.length;
-  profile.scrip += result.success ? result.payout : Math.floor(result.payout * 0.25);
+  profile.remoteObjects += result.remoteObjects ?? 0;
+  profile.scrip += Math.round((result.success ? result.payout : Math.floor(result.payout * 0.25)) * routeMultiplier);
   profile.experience += Math.round(
     result.recovered.length * 32
       + result.roomsCleared * 18
+      + (result.remoteRoomsCleared ?? 0) * 24
       + (result.interlaceTriggered ? 80 : 0)
       + (result.contractComplete ? 150 : 0)
-      + (result.auditorDefeated ? 180 : 0),
+      + (result.auditorDefeated ? 180 : 0)
+      + (result.remoteVaultCleared ? 160 : 0),
   );
   profile.rank = rankForExperience(profile.experience);
   profile.bestPayout = Math.max(profile.bestPayout, result.payout);
   profile.lastSeed = result.seed;
-  try {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  } catch {
-    // Persistence is an adapter and may be blocked by browser policy.
-  }
-  return profile;
+  profile.lastRouteId = result.routeId ?? profile.lastRouteId;
+  profile.statistics.auditorsDefeated += result.auditorDefeated ? 1 : 0;
+  profile.statistics.overlapsVisited += result.overlapsVisited ?? 0;
+  profile.statistics.objectsSeized += result.seized?.length ?? 0;
+  profile.statistics.remoteVaultsCleared += result.remoteVaultCleared ? 1 : 0;
+  return saveProfile(profile);
+}
+
+export function grantScrip(amount) {
+  const profile = loadProfile();
+  profile.scrip += Math.max(0, Math.round(amount));
+  return saveProfile(profile);
+}
+
+export function spendScrip(amount) {
+  const profile = loadProfile();
+  const cost = Math.max(0, Math.round(amount));
+  if (profile.scrip < cost) return { success: false, profile };
+  profile.scrip -= cost;
+  return { success: true, profile: saveProfile(profile) };
+}
+
+export function purchaseUpgrade(upgrade) {
+  const profile = loadProfile();
+  if (profile.upgrades.includes(upgrade.id)) return { success: false, reason: 'owned', profile };
+  if (profile.rank < upgrade.rankRequired) return { success: false, reason: 'rank', profile };
+  if (profile.scrip < upgrade.cost) return { success: false, reason: 'scrip', profile };
+  profile.scrip -= upgrade.cost;
+  profile.upgrades.push(upgrade.id);
+  return { success: true, profile: saveProfile(profile) };
+}
+
+export function hasUpgrade(profile, id) {
+  return profile.upgrades.includes(id);
 }
 
 export function rankTitle(rank) {

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "project": "ABRIR",
+  "updatedAt": "2026-07-23",
+  "assets": [
+    {
+      "id": "instituto-travessia-seal-ui",
+      "path": "public/assets/ui/instituto-travessia-seal.svg",
+      "category": "ui-mark",
+      "status": "temporary-original",
+      "usage": ["headquarters"],
+      "replaceWhenFinalArtArrives": true,
+      "notes": "Original geometric passage mark created for the functional headquarters interface. It is not a lock on the final faction logo."
+    },
+    {
+      "id": "chave-geral-audit-mark-ui",
+      "path": "public/assets/ui/chave-geral-audit-mark.svg",
+      "category": "ui-mark",
+      "status": "temporary-original",
+      "usage": ["boss-notice", "audit-state"],
+      "replaceWhenFinalArtArrives": true,
+      "notes": "Original hostile accounting mark for temporary interface use."
+    },
+    {
+      "id": "procedural-operative-standins",
+      "path": "src/render/entity-factory.js",
+      "category": "procedural-placeholder",
+      "status": "temporary-code-generated",
+      "usage": ["socrates", "zelia-amato", "lia", "kindred"],
+      "replaceWhenFinalArtArrives": true,
+      "notes": "Primitive geometry only. Never treat as character design reference."
+    },
+    {
+      "id": "procedural-enemy-standins",
+      "path": "src/render/entity-factory.js",
+      "category": "procedural-placeholder",
+      "status": "temporary-code-generated",
+      "usage": ["pursuer", "gunner", "auditor"],
+      "replaceWhenFinalArtArrives": true,
+      "notes": "Systems-readable silhouettes for testing enemy behavior."
+    },
+    {
+      "id": "generated-room-materials",
+      "path": "src/content/room-skins.js",
+      "category": "procedural-material-kit",
+      "status": "temporary-code-generated",
+      "usage": ["local-state", "remote-state"],
+      "replaceWhenFinalArtArrives": false,
+      "notes": "May remain as debug/fallback rendering after authored room modules arrive."
+    }
+  ],
+  "missingFinalAssetGroups": [
+    "operative models and animation sets",
+    "operative portraits",
+    "final Instituto Travessia identity system",
+    "final A Chave Geral identity system",
+    "location-specific room modules",
+    "weapons and ability effects",
+    "recoverable-object models and icons",
+    "audio and music",
+    "environmental storytelling props"
+  ]
+}

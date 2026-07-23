@@ -1,8 +1,11 @@
 import './ui/styles.css';
+import './ui/headquarters.css';
+import { seedForRoute } from './content/routes.js';
 import { generateMapState, validateMapState } from './core/dungeon-generator.js';
 import { RunController } from './game/run-controller.js';
 import { loadProfile, rankTitle } from './game/progression-system.js';
 import { WorldRenderer } from './render/world-renderer.js';
+import { Headquarters } from './ui/headquarters.js';
 import { Minimap } from './ui/minimap.js';
 
 const canvas = document.querySelector('#game-canvas');
@@ -10,6 +13,7 @@ const renderer = new WorldRenderer(canvas);
 const elements = {
   briefing: document.querySelector('#briefing'),
   debrief: document.querySelector('#debrief'),
+  headquarters: document.querySelector('#headquarters'),
   begin: document.querySelector('#begin-button'),
   restart: document.querySelector('#restart-button'),
   export: document.querySelector('#export-button'),
@@ -64,6 +68,13 @@ let run;
 let minimap;
 let started = false;
 let previousTime = performance.now();
+let lastResult = null;
+let pendingRoute = null;
+
+const headquarters = new Headquarters(elements.headquarters, {
+  onDeploy: (route) => deployRoute(route),
+  onProfileChange: (profile) => updateProfile(profile),
+});
 
 function formatCurrency(value) {
   return `₢ ${Math.round(value).toLocaleString()}`;
@@ -118,7 +129,8 @@ function renderContract(contract, status) {
   elements.contractTitle.textContent = contract.title;
   elements.contractDescription.textContent = contract.description;
   elements.briefContractTitle.textContent = contract.title;
-  elements.briefContractCopy.textContent = `${contract.description} Completion pays ${formatCurrency(contract.bonus)} plus a ${contract.riskMultiplier.toFixed(2)}× field multiplier.`;
+  const routePay = mapState?.route?.rewardMultiplier ?? 1;
+  elements.briefContractCopy.textContent = `${contract.description} Completion pays ${formatCurrency(contract.bonus)}, a ${contract.riskMultiplier.toFixed(2)}× contract multiplier, and ${routePay.toFixed(2)}× route accounting.`;
   if (!status) return;
   elements.contractChecks.replaceChildren();
   for (const check of status.checks) {
@@ -193,7 +205,6 @@ async function loadInitialMap() {
     const validation = validateMapState(state);
     if (!validation.valid) throw new Error(validation.errors.join(' '));
     if (state.schemaVersion < 2) {
-      console.info('Upgrading committed map contract to the independent-interlace generator.');
       return generateMapState({
         seed: state.seedLabel ?? 'ABRIR-001',
         roomCount: state.settings?.roomCount ?? state.rooms.length ?? 24,
@@ -214,7 +225,8 @@ function installRun(state) {
   renderer.buildMap(state);
   minimap = new Minimap(elements.minimap, state);
   run = new RunController(renderer, state, createRunEvents());
-  elements.seed.textContent = `${state.seedLabel} ↔ ${state.interlace?.seedLabel ?? 'PENDING'}`;
+  const routeLabel = state.route?.name ? `${state.route.name} // ` : '';
+  elements.seed.textContent = `${routeLabel}${state.seedLabel} ↔ ${state.interlace?.seedLabel ?? 'PENDING'}`;
   elements.timer.style.color = '';
   elements.eventFeed.replaceChildren();
   elements.bossBanner.classList.remove('visible');
@@ -228,40 +240,59 @@ function installRun(state) {
 function begin() {
   started = true;
   elements.briefing.close();
-  feed('Passage opened. The field clock is already running.', 'good');
+  const routeName = pendingRoute?.name ?? mapState.route?.name ?? 'FIELD TEST';
+  feed(`${routeName}: passage opened. The safe-window clock is running.`, 'good');
+  pendingRoute = null;
 }
 
 function showDebrief(result) {
   started = false;
+  lastResult = result;
   elements.debriefTitle.textContent = result.success ? 'EXTRACTION COMPLETE' : 'FIELD TEAM LOST';
   const seizureCopy = result.seized.length > 0
     ? ` A Chave Geral seized ${result.seized.map((item) => item.name).join(', ')} at the threshold.`
+    : '';
+  const retentionCopy = result.archiveRecord?.held?.length > 0
+    ? ` Instituto Travessia retained ${result.archiveRecord.held.map((item) => item.name).join(', ')} under its object allowance.`
     : '';
   const remoteCopy = result.interlaceTriggered
     ? ` ${result.remoteObjects} remote object${result.remoteObjects === 1 ? '' : 's'} and ${result.remoteRoomsCleared} remote rooms survived accounting.`
     : '';
   elements.debriefCopy.textContent = result.success
-    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back after ${result.roomsCleared} stabilized rooms.${remoteCopy}${seizureCopy}`
+    ? `${result.recovered.length} object${result.recovered.length === 1 ? '' : 's'} crossed back after ${result.roomsCleared} stabilized rooms.${remoteCopy}${seizureCopy}${retentionCopy}`
     : 'The passage closed around the team. Both generated map states remain reproducible; the loss does not.';
   elements.debriefValue.textContent = formatCurrency(result.value);
   elements.debriefCut.textContent = formatCurrency(result.instituteCut);
   elements.debriefBonus.textContent = formatCurrency(result.contractBonus);
-  elements.debriefPayout.textContent = formatCurrency(result.payout);
+  elements.debriefPayout.textContent = formatCurrency(Math.round(result.payout * result.routeRewardMultiplier));
   elements.debriefRank.textContent = `${result.profile.rank} · ${rankTitle(result.profile.rank)}`;
   elements.debriefContract.textContent = result.contractComplete
-    ? `CONTRACT COMPLETE — ${result.contract.title}`
+    ? `CONTRACT COMPLETE — ${result.contract.title} // ${result.routeName}`
     : `CONTRACT INCOMPLETE — ${result.contract.title} / EMERGENCY RATE APPLIED`;
   elements.debriefContract.className = `contract-result ${result.contractComplete ? 'complete' : 'failed'}`;
   updateProfile(result.profile);
   elements.debrief.showModal();
 }
 
-function restart() {
+function returnToInstitute() {
   elements.debrief.close();
-  const seed = `ABRIR-${Date.now().toString(36).toUpperCase()}`;
-  installRun(generateMapState({ seed, roomCount: 24, loopChance: 0.34, interlaceAtSeconds: 82 }));
-  started = true;
-  feed('Two new deterministic states have been generated and scheduled to collide.', 'good');
+  headquarters.open(lastResult);
+}
+
+function deployRoute(route) {
+  const profile = loadProfile();
+  const seed = seedForRoute(route, profile);
+  const state = generateMapState({
+    seed,
+    roomCount: route.roomCount,
+    loopChance: route.loopChance,
+    interlaceAtSeconds: route.interlaceAtSeconds,
+  });
+  state.route = structuredClone(route);
+  pendingRoute = route;
+  installRun(state);
+  started = false;
+  elements.briefing.showModal();
 }
 
 function exportMap() {
@@ -309,7 +340,7 @@ canvas.addEventListener('pointerdown', (event) => {
 });
 
 elements.begin.addEventListener('click', begin);
-elements.restart.addEventListener('click', restart);
+elements.restart.addEventListener('click', returnToInstitute);
 elements.export.addEventListener('click', exportMap);
 
 function frame(time) {
@@ -325,5 +356,5 @@ function frame(time) {
 
 mapState = await loadInitialMap();
 installRun(mapState);
-elements.briefing.showModal();
+headquarters.open();
 requestAnimationFrame(frame);

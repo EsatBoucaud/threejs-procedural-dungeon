@@ -9,6 +9,8 @@ export class DirectorSystem {
     this.nextWaveAt = 24;
     this.auditorSpawned = false;
     this.auditorDefeated = false;
+    this.auditorDelay = 0;
+    this.auditorHealthMultiplier = 1;
   }
 
   update(delta, context) {
@@ -27,7 +29,7 @@ export class DirectorSystem {
     if (
       context.interlaceTriggered
       && !this.auditorSpawned
-      && context.elapsed >= this.mapState.interlaceAtSeconds + 24
+      && context.elapsed >= this.mapState.interlaceAtSeconds + 24 + this.auditorDelay
       && this.mission.clearedRoomCount >= 4
     ) {
       this.spawnAuditor();
@@ -76,7 +78,7 @@ export class DirectorSystem {
       .sort((a, b) => b.width * b.depth - a.width * a.depth)[0];
     const vault = this.mapState.rooms.find((room) => room.id === this.mapState.vaultRoomId);
     const spawn = largestOverlap ?? vault;
-    this.combat.spawnEnemy({
+    const auditor = this.combat.spawnEnemy({
       x: spawn.x,
       z: spawn.z,
       roomId: 'auditor-incursion',
@@ -85,8 +87,18 @@ export class DirectorSystem {
       difficulty: 1,
       archetype: 'auditor',
     });
+    if (this.auditorHealthMultiplier !== 1) {
+      auditor.maxHealth *= this.auditorHealthMultiplier;
+      auditor.health = auditor.maxHealth;
+      this.events.onBossHealth?.(auditor.health, auditor.maxHealth);
+    }
     this.events.onBoss?.({ name: 'THE AUDITOR', state: 'arrived' });
-    this.events.onFeed?.('THE AUDITOR HAS MATERIALIZED INSIDE THE LARGEST ACCOUNTING CONTRADICTION.', 'danger');
+    this.events.onFeed?.(
+      this.auditorHealthMultiplier < 1
+        ? 'THE AUDITOR HAS ARRIVED LATE, UNDERSTAFFED, AND FORMALLY EXEMPTED FROM CONFIDENCE.'
+        : 'THE AUDITOR HAS MATERIALIZED INSIDE THE LARGEST ACCOUNTING CONTRADICTION.',
+      'danger',
+    );
   }
 
   handleEnemyKilled(enemy) {

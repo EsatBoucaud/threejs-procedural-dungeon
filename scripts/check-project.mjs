@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { FIELD_ROUTES } from '../src/content/routes.js';
+import { INSTITUTE_UPGRADES } from '../src/content/upgrades.js';
 import { validateMapState } from '../src/core/dungeon-generator.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -11,11 +13,19 @@ const required = [
   'src/core/dungeon-generator.js',
   'src/content/contracts.js',
   'src/content/items.js',
+  'src/content/routes.js',
+  'src/content/upgrades.js',
   'src/render/world-renderer.js',
   'src/game/run-controller.js',
   'src/game/mission-system.js',
   'src/game/director-system.js',
+  'src/game/progression-system.js',
+  'src/game/archive-system.js',
   'src/ui/minimap.js',
+  'src/ui/headquarters.js',
+  'src/ui/headquarters.css',
+  'public/assets/ui/instituto-travessia-seal.svg',
+  'public/assets/ui/chave-geral-audit-mark.svg',
   'public/maps/abrir-001.json',
 ];
 for (const file of required) await fs.access(path.join(root, file));
@@ -30,6 +40,20 @@ if (state.interlace.connections.length < state.interlace.rooms.length - 1) throw
 if (state.interlace.bridges.length < 1) throw new Error('At least one cross-state bridge is required.');
 if (!Array.isArray(state.interlace.overlaps)) throw new Error('Overlap list is required.');
 
+if (FIELD_ROUTES.length < 6) throw new Error('Headquarters route board requires at least six routes.');
+if (new Set(FIELD_ROUTES.map((route) => route.id)).size !== FIELD_ROUTES.length) throw new Error('Route IDs must be unique.');
+if (FIELD_ROUTES.some((route) => route.rewardMultiplier < 1 || route.roomCount < 10)) throw new Error('Route tuning is invalid.');
+if (INSTITUTE_UPGRADES.length < 7) throw new Error('Permissions desk requires at least seven upgrades.');
+if (new Set(INSTITUTE_UPGRADES.map((upgrade) => upgrade.id)).size !== INSTITUTE_UPGRADES.length) throw new Error('Upgrade IDs must be unique.');
+
+const mainSource = await fs.readFile(path.join(root, 'src/main.js'), 'utf8');
+const characterSource = await fs.readFile(path.join(root, 'src/content/characters.js'), 'utf8');
+for (const expected of ['Sócrates', 'Zélia', 'Lia', 'Kindred']) {
+  if (!characterSource.includes(expected)) throw new Error(`Missing operative identity: ${expected}.`);
+}
+if (characterSource.includes('Caio Vilar')) throw new Error('Retired character name Caio Vilar must not return.');
+if (!mainSource.includes("headquarters.open()")) throw new Error('Headquarters must remain the primary startup loop.');
+
 console.log(
-  `ABRIR project check passed. local=${state.rooms.length}/${state.connections.length} remote=${state.interlace.rooms.length}/${state.interlace.connections.length} bridges=${state.interlace.bridges.length} overlaps=${state.interlace.overlaps.length}.`,
+  `ABRIR project check passed. local=${state.rooms.length}/${state.connections.length} remote=${state.interlace.rooms.length}/${state.interlace.connections.length} bridges=${state.interlace.bridges.length} overlaps=${state.interlace.overlaps.length} routes=${FIELD_ROUTES.length} permissions=${INSTITUTE_UPGRADES.length}.`,
 );

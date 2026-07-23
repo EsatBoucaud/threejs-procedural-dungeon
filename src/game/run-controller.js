@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { OPERATIVES } from '../content/characters.js';
 import { contractForSeed, contractProgress } from '../content/contracts.js';
+import { recordRecoveredObjects } from './archive-system.js';
 import { CombatSystem } from './combat-system.js';
 import { DirectorSystem } from './director-system.js';
 import { HazardSystem } from './hazard-system.js';
 import { MissionSystem } from './mission-system.js';
 import { createWalkability } from './navigation.js';
-import { recordRun } from './progression-system.js';
+import { hasUpgrade, loadProfile, recordRun } from './progression-system.js';
 
 const TMP = new THREE.Vector3();
 
@@ -19,14 +20,16 @@ export class RunController {
     this.renderer = renderer;
     this.mapState = mapState;
     this.events = events;
+    this.profile = loadProfile();
+    this.route = mapState.route ?? null;
     this.contract = mapState.contract ?? contractForSeed(mapState.seed);
     this.activeOperativeIndex = 0;
     this.healthByOperative = OPERATIVES.map((operative) => operative.maxHealth);
     this.abilityCooldowns = OPERATIVES.map(() => 0);
     this.dodgeCooldowns = OPERATIVES.map(() => 0);
     this.modifiers = {
-      healing: 1,
-      cooldownRate: 1,
+      healing: hasUpgrade(this.profile, 'shared-license') ? 1.22 : 1,
+      cooldownRate: hasUpgrade(this.profile, 'rapid-permit') ? 1.12 : 1,
       movement: 1,
     };
     this.player = {
@@ -42,6 +45,9 @@ export class RunController {
     this.interlaceTriggered = false;
     this.seizedAtExtraction = [];
     this.isWalkable = createWalkability(mapState, () => this.interlaceTriggered);
+
+    if (hasUpgrade(this.profile, 'route-priority')) this.mapState.interlaceAtSeconds += 15;
+    if (hasUpgrade(this.profile, 'auditor-exemption')) this.mapState.interlaceAtSeconds += 8;
 
     this.combat = new CombatSystem(renderer, {
       onFeed: (...args) => this.events.onFeed?.(...args),
@@ -61,6 +67,8 @@ export class RunController {
       onProgress: () => this.reportProgress(),
     };
     this.mission = new MissionSystem(renderer, mapState, missionEvents, this.combat);
+    if (hasUpgrade(this.profile, 'contradiction-case')) this.mission.remotePayoutMultiplier *= 1.2;
+
     this.director = new DirectorSystem(mapState, this.combat, this.mission, {
       onFeed: (...args) => this.events.onFeed?.(...args),
       onThreat: (value) => this.events.onThreat?.(value),
@@ -69,6 +77,9 @@ export class RunController {
         this.reportProgress();
       },
     });
+    this.director.auditorHealthMultiplier = hasUpgrade(this.profile, 'auditor-exemption') ? 0.72 : 1;
+    this.director.auditorDelay = hasUpgrade(this.profile, 'auditor-exemption') ? 16 : 0;
+
     this.hazards = new HazardSystem(renderer, mapState, {
       onDamage: (amount) => this.damagePlayer(amount),
       onFeed: (...args) => this.events.onFeed?.(...args),
@@ -224,21 +235,23 @@ export class RunController {
 
   attemptExtraction() {
     this.seizedAtExtraction = [];
+    const insured = hasUpgrade(this.profile, 'field-insurance');
     const remoteIndices = this.mission.recovered
       .map((item, index) => ({ item, index }))
       .filter(({ item }) => item.origin === 'interlace');
     const auditPressure = this.interlaceTriggered && !this.director.auditorDefeated
       ? this.director.threat + remoteIndices.length * 0.12
       : 0;
-    if (remoteIndices.length > 0 && auditPressure >= 0.68) {
-      const target = remoteIndices
-        .sort((a, b) => b.item.value - a.item.value)[0];
+    if (remoteIndices.length > 0 && auditPressure >= 0.68 && !insured) {
+      const target = remoteIndices.sort((a, b) => b.item.value - a.item.value)[0];
       this.seizedAtExtraction.push(...this.mission.recovered.splice(target.index, 1));
       this.events.onLoot?.(this.mission.recoveredValue);
       this.events.onFeed?.(
         `A Chave Geral seized ${target.item.name} at the passage threshold. Defeating The Auditor prevents this.`,
         'danger',
       );
+    } else if (remoteIndices.length > 0 && auditPressure >= 0.68 && insured) {
+      this.events.onFeed?.('FIELD INSURANCE accepted the seizure notice and returned it unsigned.', 'good');
     }
     this.finish(true);
   }
@@ -347,6 +360,7 @@ export class RunController {
       this.activeOperativeIndex = replacement;
       this.renderer.recolorPlayer(this.activeOperative.color);
       this.player.invulnerable = 2;
+      if (hasUpgrade(this.profile, 'shared-license')) this.heal(12, true);
       this.events.onOperative?.(this.activeOperative, this.health, this.activeOperative.maxHealth);
       this.events.onTeam?.(this.teamSnapshot());
       this.reportCooldowns();
@@ -407,13 +421,17 @@ export class RunController {
     const value = this.recoveredValue;
     const instituteCut = Math.ceil(value * 0.15);
     const baseFieldPayout = Math.max(0, value - instituteCut);
-    const contractBonus = success && contractStatus.complete ? this.contract.bonus : 0;
+    const vaultWarrantBonus = success && this.mission.remoteVaultCleared && hasUpgrade(this.profile, 'vault-warrant') ? 320 : 0;
+    const contractBonus = success && contractStatus.complete ? this.contract.bonus + vaultWarrantBonus : vaultWarrantBonus;
     const multiplier = contractStatus.complete ? this.contract.riskMultiplier : 0.72;
     const payout = success ? Math.round(baseFieldPayout * multiplier + contractBonus) : Math.round(baseFieldPayout * 0.18);
     const result = {
       success,
       seed: this.mapState.seedLabel,
       remoteSeed: this.mapState.interlace?.seedLabel,
+      routeId: this.route?.id ?? null,
+      routeName: this.route?.name ?? 'FIELD TEST',
+      routeRewardMultiplier: this.route?.rewardMultiplier ?? 1,
       elapsedSeconds: Math.round(this.elapsed),
       recovered: this.mission.recovered,
       seized: this.seizedAtExtraction,
@@ -426,6 +444,7 @@ export class RunController {
       contractComplete: contractStatus.complete,
       roomsCleared: this.mission.clearedRoomCount,
       remoteRoomsCleared: this.mission.remoteClearedRoomCount,
+      remoteVaultCleared: this.mission.remoteVaultCleared,
       remoteObjects: this.mission.remoteRecoveredCount,
       overlapsVisited: this.mission.overlapsVisited.size,
       auditorDefeated: this.director.auditorDefeated,
@@ -433,6 +452,7 @@ export class RunController {
       timestamp: new Date().toISOString(),
     };
     result.profile = recordRun(result);
+    result.archiveRecord = success ? recordRecoveredObjects(result) : { entries: [], held: [], stored: [] };
     try {
       const history = JSON.parse(localStorage.getItem('abrir.runHistory') ?? '[]');
       history.unshift(result);
