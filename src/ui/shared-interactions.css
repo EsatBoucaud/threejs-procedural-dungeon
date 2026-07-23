@@ -1,3 +1,26 @@
+#interaction-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 136px;
+  z-index: 24;
+  display: none;
+  align-items: center;
+  gap: 9px;
+  transform: translateX(-50%);
+  padding: 9px 12px;
+  border: 1px solid rgba(213, 183, 109, .32);
+  background: rgba(7, 11, 18, .9);
+  color: #d6dde5;
+  box-shadow: 0 12px 44px rgba(0,0,0,.45);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+#interaction-hint.visible { display: flex; }
+#interaction-hint span { font-size: 10px; letter-spacing: .04em; }
+.shared-interaction-open #hud { filter: brightness(.72) saturate(.82); }
+.shared-interaction-open #event-feed { opacity: .48; }
+
 #shared-interaction-root {
   position: fixed;
   inset: 0;
@@ -205,6 +228,7 @@
 .shared-interaction-shell.completed .card-hand { display:none; }
 
 @media (max-width: 760px) {
+  #interaction-hint { bottom: 195px; max-width: calc(100vw - 20px); }
   #shared-interaction-root { padding: 8px; }
   .shared-interaction-shell { width: 100%; max-height: 82vh; }
   .shared-player-strip { grid-template-columns: repeat(2, 1fr); }
