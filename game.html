@@ -6,20 +6,21 @@
     <meta name="theme-color" content="#030508" />
     <meta
       name="description"
-      content="ABRIR exploration and turn-based card combat running on a saved Three.js procedural map state."
+      content="ABRIR dual-combat MVP running on a saved Three.js procedural map state."
     />
-    <title>ABRIR — Card Combat MVP</title>
+    <title>ABRIR — Dual Combat MVP</title>
   </head>
   <body>
     <div id="game-shell">
-      <main id="viewport" aria-label="ABRIR saved procedural map and card combat test"></main>
+      <main id="viewport" aria-label="ABRIR saved procedural map dual-combat test"></main>
       <div id="world-labels" aria-live="polite"></div>
+      <div id="damage-vignette" aria-hidden="true"></div>
 
       <section id="exploration-hud" class="chrome-panel">
-        <p class="eyebrow">ABRIR · SAVED MAP TEST</p>
+        <p class="eyebrow">ABRIR · DUAL COMBAT MVP</p>
         <h1 id="map-name">Loading saved map…</h1>
         <p id="room-readout">Locating entrance…</p>
-        <p id="objective-readout">Find the marked combat room.</p>
+        <p id="objective-readout">Find the marked encounter rooms.</p>
         <small id="map-meta"></small>
       </section>
 
@@ -29,7 +30,13 @@
         <small>I · toggle interlacing test</small>
       </section>
 
-      <section id="legend-panel" class="chrome-panel combat-only" aria-label="Combat legend">
+      <section id="run-ledger" class="chrome-panel">
+        <div><span>RECOVERED VALUE</span><b id="recovered-value">₵ 000</b></div>
+        <div><span>SKIRMISH</span><b id="skirmish-state">OPEN</b></div>
+        <div><span>TACTICAL</span><b id="tactical-state">OPEN</b></div>
+      </section>
+
+      <section id="legend-panel" class="chrome-panel card-only" aria-label="Combat legend">
         <h2>LEGEND</h2>
         <ul>
           <li><span class="legend-icon ally">◆</span>ALLY</li>
@@ -41,7 +48,7 @@
         </ul>
       </section>
 
-      <section id="combat-intel" class="chrome-panel combat-only" aria-live="polite">
+      <section id="combat-intel" class="chrome-panel card-only" aria-live="polite">
         <h2>COMBAT INTEL</h2>
         <p>ENEMIES: <b id="enemy-count">0</b></p>
         <p>ELITES: <b id="elite-count">0</b></p>
@@ -49,13 +56,13 @@
         <p>TURN: <b id="turn-count">1</b></p>
       </section>
 
-      <div id="lane-labels" class="combat-only" aria-hidden="true">
+      <div id="lane-labels" class="card-only" aria-hidden="true">
         <span>FRONT LANE</span>
         <span>MID LANE</span>
         <span>REAR LANE</span>
       </div>
 
-      <section id="combat-deck" class="chrome-panel combat-only" aria-label="Card combat controls">
+      <section id="combat-deck" class="chrome-panel card-only" aria-label="Card combat controls">
         <article id="active-operative">
           <div id="active-portrait" class="portrait portrait-socrates"><span>S</span></div>
           <div class="operative-copy">
@@ -94,10 +101,67 @@
         </aside>
       </section>
 
+      <section id="realtime-party" class="chrome-panel realtime-only" aria-label="Real-time field team">
+        <article id="rt-agent-0" class="rt-agent active">
+          <div class="portrait portrait-socrates"><span>S</span></div>
+          <div><small>FIELD MEDIC</small><strong>SÓCRATES</strong><i><em id="rt-health-0"></em></i><span id="rt-health-copy-0">42 / 42</span></div>
+        </article>
+        <article id="rt-agent-1" class="rt-agent">
+          <div class="portrait portrait-zelia"><span>Z</span></div>
+          <div><small>VANGUARD</small><strong>ZÉLIA</strong><i><em id="rt-health-1"></em></i><span id="rt-health-copy-1">52 / 52</span></div>
+        </article>
+      </section>
+
+      <section id="realtime-rack" class="chrome-panel realtime-only" aria-label="Real-time abilities">
+        <article id="rt-primary" class="rt-ability ready">
+          <kbd>1 / LMB</kbd><strong id="rt-primary-name">PRECISION SHOT</strong><small id="rt-primary-copy">Fast ranged projectile</small><i class="cooldown-mask"></i>
+        </article>
+        <article id="rt-secondary" class="rt-ability ready">
+          <kbd>2</kbd><strong id="rt-secondary-name">FIELD TREATMENT</strong><small id="rt-secondary-copy">Restore both operatives</small><i class="cooldown-mask"></i>
+        </article>
+        <article id="rt-dodge" class="rt-ability ready">
+          <kbd>SHIFT</kbd><strong>DODGE</strong><small>Brief invulnerability</small><i class="cooldown-mask"></i>
+        </article>
+        <article class="rt-ability ready">
+          <kbd>Q / TAB</kbd><strong>SWITCH</strong><small>Take direct control</small>
+        </article>
+      </section>
+
+      <section id="realtime-intel" class="chrome-panel realtime-only">
+        <p class="eyebrow">REAL-TIME SKIRMISH</p>
+        <strong id="rt-enemy-count">0 HOSTILES</strong>
+        <small>WASD · MOVE · MOUSE · AIM</small>
+      </section>
+
       <section id="exploration-controls" class="chrome-panel">
         <span>WASD / ARROWS · MOVE</span>
         <span>Q / TAB · SWITCH OPERATIVE</span>
         <a href="./index.html">OPEN MAP FORGE</a>
+      </section>
+
+      <section id="extraction-panel" class="modal-panel" aria-live="assertive">
+        <p class="eyebrow">EXTRACTION WINDOW</p>
+        <h2>Leave with the recovered objects?</h2>
+        <p id="extraction-copy">The portal is stable. Staying will interlace the tactical room and place the current haul at risk.</p>
+        <div class="modal-values"><span>ON HAND</span><b id="extraction-value">₵ 000</b></div>
+        <div class="modal-actions">
+          <button id="extract-now" type="button">EXTRACT</button>
+          <button id="stay-late" type="button">STAY AFTER NIGHT</button>
+        </div>
+      </section>
+
+      <section id="results-panel" class="modal-panel" aria-live="assertive">
+        <p class="eyebrow">INSTITUTO TRAVESSIA · RUN REPORT</p>
+        <h2 id="result-title">Extraction complete</h2>
+        <div class="result-grid">
+          <span>RECOVERED</span><b id="result-gross">₵ 000</b>
+          <span>INSTITUTE RETENTION · 15%</span><b id="result-retained">₵ 000</b>
+          <span>SECURED</span><b id="result-secured">₵ 000</b>
+        </div>
+        <div class="modal-actions">
+          <button id="restart-run" type="button">RUN AGAIN</button>
+          <a href="./index.html">OPEN MAP FORGE</a>
+        </div>
       </section>
 
       <div id="encounter-banner" role="status" aria-live="assertive">
