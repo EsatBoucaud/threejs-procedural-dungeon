@@ -68,6 +68,11 @@ export class Headquarters {
     }
   }
 
+  refresh(message, tone = '') {
+    this.render();
+    this.setStatus(message, tone);
+  }
+
   renderProfile(profile, summary) {
     this.profileNode.innerHTML = `
       <div class="hq-rank-seal"><span>RANK</span><strong>${profile.rank}</strong></div>
@@ -178,11 +183,10 @@ export class Headquarters {
     }
     if (action === 'sell') {
       const result = sellArchivedObject(button.dataset.archiveId);
-      this.setStatus(
-        result.success ? `Object transferred for ${currency(result.payout)}.` : 'That object is no longer available for field sale.',
-        result.success ? 'good' : 'danger',
-      );
-      this.render();
+      const message = result.success
+        ? `Object transferred for ${currency(result.payout)}.`
+        : 'That object is no longer available for field sale.';
+      this.refresh(message, result.success ? 'good' : 'danger');
       this.callbacks.onProfileChange?.(result.profile ?? loadProfile());
       return;
     }
@@ -193,8 +197,7 @@ export class Headquarters {
         : result.reason === 'scrip'
           ? `Buyback denied. Required: ${currency(result.cost)}.`
           : 'The object is not currently eligible for buyback.';
-      this.render();
-      this.setStatus(message, result.success ? 'good' : 'danger');
+      this.refresh(message, result.success ? 'good' : 'danger');
       this.callbacks.onProfileChange?.(result.profile ?? loadProfile());
       return;
     }
@@ -209,9 +212,8 @@ export class Headquarters {
           : result.reason === 'scrip'
             ? `${currency(upgrade.cost)} is required.`
             : 'That permission is already active.';
-      this.render();
-      this.setStatus(message, result.success ? 'good' : 'danger');
-      this.callbacks.onProfileChange?.(result.profile);
+      this.refresh(message, result.success ? 'good' : 'danger');
+      this.callbacks.onProfileChange?.(result.profile ?? loadProfile());
     }
   }
 }
