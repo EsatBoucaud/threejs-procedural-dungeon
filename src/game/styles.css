@@ -1,0 +1,142 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #05070c;
+  color: #f5f1e7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#game-shell,
+#viewport {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(35, 68, 91, 0.2), transparent 44%),
+    #05070c;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#hud {
+  position: fixed;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 26px 34px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(2, 4, 8, 0.94), rgba(2, 4, 8, 0));
+}
+
+#hud p,
+#hud h1 {
+  margin: 0;
+}
+
+.eyebrow {
+  color: #d9aa57;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+#map-name {
+  max-width: 720px;
+  margin-top: 5px !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(24px, 3vw, 44px);
+  font-weight: 500;
+  line-height: 1;
+}
+
+#map-meta,
+#room-readout,
+#interlace-readout {
+  margin-top: 8px !important;
+  color: rgba(245, 241, 231, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.hud-right {
+  padding-top: 4px;
+  text-align: right;
+}
+
+#interlace-readout.active {
+  color: #ff8c68;
+  text-shadow: 0 0 18px rgba(255, 86, 58, 0.7);
+}
+
+#controls {
+  position: fixed;
+  z-index: 4;
+  left: 22px;
+  bottom: 20px;
+  display: grid;
+  gap: 5px;
+  min-width: 220px;
+  padding: 13px 15px;
+  border: 1px solid rgba(219, 180, 106, 0.22);
+  border-radius: 12px;
+  background: rgba(5, 7, 12, 0.78);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(14px);
+  font-size: 12px;
+}
+
+#controls strong {
+  color: #e6c57f;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#controls span {
+  color: rgba(245, 241, 231, 0.66);
+}
+
+#controls a {
+  width: fit-content;
+  margin-top: 4px;
+  color: #8fc8e8;
+  text-decoration: none;
+}
+
+#controls a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  #hud {
+    padding: 17px 17px 28px;
+  }
+
+  .hud-right {
+    display: none;
+  }
+
+  #controls {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    min-width: 0;
+  }
+}
