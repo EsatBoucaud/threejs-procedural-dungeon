@@ -18,7 +18,7 @@ At least one generated JSON map ships in the repository. This makes builds repro
 
 ## D-005 — Data-driven generated runs
 
-Rooms, corridors, route parameters, contracts, loot, permissions, and interlace geometry are represented as serializable data. Rendering and gameplay derive from those contracts rather than hard-coding a single level.
+Rooms, corridors, route parameters, contracts, loot, permissions, deployment ownership, combat-kit assignments, and interlace geometry are represented as serializable data. Rendering and gameplay derive from those contracts rather than hard-coding a single level.
 
 ## D-006 — Independent interlace states
 
@@ -40,13 +40,13 @@ Character art, animation, and environmental assets can arrive later. Every imple
 
 Procedural geometry and temporary vector interface marks are implementation stand-ins only. They are tracked in `ASSET_MANIFEST.json` and must not become positive reference material for final character, faction, or environment art.
 
-## D-011 — Four active operatives
+## D-011 — Four active field characters
 
-The current field roster is Sócrates, Zélia Amato, Lia, and Kindred. Caio Vilar is a retired name and must not return to active content.
+The active field roster is Sócrates, Zélia Amato, Lia, and Chilindo. Caio Vilar and Kindred are retired names and must not return to active character content.
 
-## D-012 — Kindred remains unspecified
+## D-012 — Afonso remains headquarters leadership
 
-Kindred's identity and background remain deliberately unspecified. Systems and documentation should not fill in biography, nationality, gender identity, or origin without an explicit future decision.
+Afonso provides briefings, mission context, uncertainty, and Instituto Travessia's official framing. He is not a selectable field character.
 
 ## D-013 — Route names are not finished cultural representation
 
@@ -58,7 +58,7 @@ Each recovered object receives a deterministic fifteen-percent retention roll, w
 
 ## D-015 — Merge aggressively but preserve checks
 
-Large systems additions continue through scoped branches and pull requests. Pull requests may be merged rapidly after generation checks, headquarters/economy checks, process checks, room-layout checks, repository validation, and production build all pass.
+Large systems additions continue through scoped branches and pull requests. Pull requests may be merged rapidly after generation checks, headquarters/economy checks, process checks, room-layout checks, deployment checks, repository validation, and production build all pass.
 
 ## D-016 — Rendering and collision share one room-layout contract
 
@@ -75,3 +75,15 @@ The six procedural route palettes and architecture profiles exist to test system
 ## D-019 — Generated architecture is working cover
 
 Tactical obstacles block movement and both friendly and hostile projectiles. Future penetration, destruction, ricochet, and material-class systems must extend this contract rather than bypassing it with renderer-only effects.
+
+## D-020 — ABRIR supports two-player and four-player ownership
+
+In two-player mode, each player owns two of the four field characters and may swap only between that assigned pair. In four-player mode, each player owns one character and ordinary character swapping is unavailable. Ownership is serialized in the deployment contract and must remain stable through the run.
+
+## D-021 — Character identity does not determine combat family
+
+Character selection and combat-kit selection are separate decisions. Any character may equip any available kit. Duplicate kits and uneven melee/ranged compositions are valid. The game may communicate tradeoffs but must not enforce an equal role split.
+
+## D-022 — Local prototype ownership is not finished networking
+
+The current browser prototype can select a local player and resolve only that player's owned character or pair for local control. This validates assignment and swapping rules but does not claim completed two-player or four-player networking. Remote entities, replication, reconnect, and simultaneous control remain explicit implementation work.
