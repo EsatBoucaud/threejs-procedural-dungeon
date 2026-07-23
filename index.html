@@ -76,7 +76,7 @@
           <div class="controls-card">
             <span class="eyebrow">FIELD CONTROLS</span>
             <p><kbd>WASD</kbd> move · <kbd>CLICK</kbd> attack · <kbd>Q</kbd> swap assigned character</p>
-            <p><kbd>R</kbd> ability · <kbd>SPACE</kbd> dodge · <kbd>E</kbd> recover/extract</p>
+            <p><kbd>R</kbd> ability · <kbd>SPACE</kbd> dodge · <kbd>E</kbd> interact / propose / extract</p>
           </div>
         </div>
       </section>
@@ -88,7 +88,9 @@
       </section>
 
       <aside id="event-feed" aria-label="Mission event feed"></aside>
+      <div id="interaction-hint" aria-live="polite"></div>
       <div id="crosshair"></div>
+      <div id="shared-interaction-root" aria-label="Shared multiplayer interaction"></div>
 
       <dialog id="briefing">
         <div class="briefing-shell">
@@ -105,7 +107,8 @@
           </div>
           <p>
             Four characters enter every authorization. In two-player mode, each player owns two and can swap between them.
-            In four-player mode, each player owns one. Combat kits are chosen separately from character identity.
+            In four-player mode, each player owns one. Players decide who fights, loots, talks, negotiates, card battles,
+            operates systems, proposes route choices, and requests extraction during the run.
           </p>
           <section class="brief-contract">
             <span>FIELD CONTRACT</span>
@@ -118,8 +121,8 @@
           <div class="mission-grid">
             <article><b>1.</b><span>Choose two-player or four-player ownership before the passage opens.</span></article>
             <article><b>2.</b><span>Assign every character once, then select any combat kit for each character.</span></article>
-            <article><b>3.</b><span>No role quota is enforced: the team may choose any melee/ranged composition.</span></article>
-            <article><b>4.</b><span>In two-player mode, <kbd>Q</kbd> swaps only between that player's assigned pair.</span></article>
+            <article><b>3.</b><span>No field activity is reserved by combat kit, character, or player seat.</span></article>
+            <article><b>4.</b><span>Shared interactions support handoff, participation, visible proposals, opposition, abstention, and decision rolls.</span></article>
           </div>
           <button id="begin-button" autofocus>CONFIRM DEPLOYMENT AND OPEN PASSAGE</button>
           <button id="export-button" class="secondary">EXPORT CURRENT MAP STATE</button>
