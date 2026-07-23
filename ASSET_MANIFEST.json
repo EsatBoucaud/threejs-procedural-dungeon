@@ -17,9 +17,9 @@
       "path": "public/assets/ui/chave-geral-audit-mark.svg",
       "category": "ui-mark",
       "status": "temporary-original",
-      "usage": ["boss-notice", "audit-state"],
+      "usage": ["boss-notice", "audit-state", "major-process-state"],
       "replaceWhenFinalArtArrives": true,
-      "notes": "Original hostile accounting mark for temporary interface use."
+      "notes": "Original hostile accounting mark for temporary interface use across all Chave Geral process notices."
     },
     {
       "id": "procedural-operative-standins",
@@ -35,9 +35,9 @@
       "path": "src/render/entity-factory.js",
       "category": "procedural-placeholder",
       "status": "temporary-code-generated",
-      "usage": ["pursuer", "gunner", "auditor"],
+      "usage": ["pursuer", "gunner", "auditor", "seizure-chief", "route-runner", "warden"],
       "replaceWhenFinalArtArrives": true,
-      "notes": "Systems-readable silhouettes for testing enemy behavior."
+      "notes": "Systems-readable silhouettes for testing enemy behavior. The four major-process forms communicate collision size and mechanics only; they are not antagonist concept art."
     },
     {
       "id": "generated-room-materials",
@@ -54,6 +54,10 @@
     "operative portraits",
     "final Instituto Travessia identity system",
     "final A Chave Geral identity system",
+    "final Auditor model and effects",
+    "final Seizure Chief model and confiscation effects",
+    "final Route Runner model and route effects",
+    "final Warden model and extraction-lock effects",
     "location-specific room modules",
     "weapons and ability effects",
     "recoverable-object models and icons",
