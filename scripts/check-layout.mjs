@@ -3,10 +3,10 @@ import { FIELD_ROUTES } from '../src/content/routes.js';
 import { deriveMapLayout } from '../src/core/room-layout.js';
 import { generateMapState } from '../src/core/dungeon-generator.js';
 
-function countOpenings(layer) {
+function roomsWithOpenings(layer) {
   let total = 0;
   for (const sides of layer.openings.values()) {
-    for (const openings of Object.values(sides)) total += openings.length;
+    if (Object.values(sides).some((openings) => openings.length > 0)) total += 1;
   }
   return total;
 }
@@ -27,8 +27,8 @@ for (const route of FIELD_ROUTES) {
 
   assert.deepEqual(layoutA.local.obstacles, layoutB.local.obstacles, `${route.id}: local layout drift.`);
   assert.deepEqual(layoutA.remote.obstacles, layoutB.remote.obstacles, `${route.id}: remote layout drift.`);
-  assert.ok(countOpenings(layoutA.local) >= stateA.connections.length, `${route.id}: local openings missing.`);
-  assert.ok(countOpenings(layoutA.remote) >= stateA.interlace.connections.length, `${route.id}: remote openings missing.`);
+  assert.equal(roomsWithOpenings(layoutA.local), stateA.rooms.length, `${route.id}: local room opening missing.`);
+  assert.equal(roomsWithOpenings(layoutA.remote), stateA.interlace.rooms.length, `${route.id}: remote room opening missing.`);
 
   const localRooms = new Map(stateA.rooms.map((room) => [room.id, room]));
   const remoteRooms = new Map(stateA.interlace.rooms.map((room) => [room.id, room]));
