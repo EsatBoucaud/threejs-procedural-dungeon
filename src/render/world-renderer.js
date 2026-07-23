@@ -75,6 +75,8 @@ export class WorldRenderer {
   buildMap(state) {
     this.world.clear();
     this.interlaceWorld.clear();
+    this.interlaceWorld.visible = false;
+    this.scene.fog.color.setHex(0x071018);
     buildRoomLayer(this.world, state.rooms, state.connections, ROOM_SKINS.travessia, false);
     buildRoomLayer(this.interlaceWorld, state.interlace.rooms, [], ROOM_SKINS.interlace, true);
     const entrance = state.rooms.find((room) => room.id === state.entranceRoomId);
