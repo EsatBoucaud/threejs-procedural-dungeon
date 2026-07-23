@@ -65,6 +65,21 @@ function terminationMessage(enemy) {
   return enemy.elite ? 'Elite process terminated.' : 'Hostile process terminated.';
 }
 
+function findNearbyWalkable(position, isWalkable, radius = 4) {
+  if (isWalkable(position, 0.5)) return position;
+  for (let ring = 1; ring <= 4; ring += 1) {
+    const distance = radius * (ring / 4);
+    for (let index = 0; index < 12; index += 1) {
+      const angle = (index / 12) * Math.PI * 2 + ring * 0.37;
+      const candidate = position.clone();
+      candidate.x += Math.cos(angle) * distance;
+      candidate.z += Math.sin(angle) * distance;
+      if (isWalkable(candidate, 0.5)) return candidate;
+    }
+  }
+  return position;
+}
+
 export class CombatSystem {
   constructor(renderer, callbacks = {}) {
     this.renderer = renderer;
@@ -232,6 +247,10 @@ export class CombatSystem {
       projectile.position.addScaledVector(projectile.velocity, delta);
       projectile.mesh.position.x = projectile.position.x;
       projectile.mesh.position.z = projectile.position.z;
+      if (this.renderer.isPointBlocked(projectile.position, 0.04)) {
+        projectile.remaining = 0;
+        continue;
+      }
       for (const enemy of this.enemies) {
         if (
           enemy.dead
@@ -262,6 +281,10 @@ export class CombatSystem {
       projectile.position.addScaledVector(projectile.velocity, delta);
       projectile.mesh.position.x = projectile.position.x;
       projectile.mesh.position.z = projectile.position.z;
+      if (this.renderer.isPointBlocked(projectile.position, projectile.radius * 0.2)) {
+        projectile.remaining = 0;
+        continue;
+      }
       if (projectile.position.distanceTo(player.position) < projectile.radius) {
         projectile.remaining = 0;
         this.callbacks.onPlayerDamage?.(projectile.damage);
@@ -292,6 +315,10 @@ export class CombatSystem {
   updateEnemies(delta, player, isWalkable) {
     for (const enemy of this.enemies) {
       if (enemy.dead) continue;
+      if (!isWalkable(enemy.position, enemy.major ? 0.8 : 0.5)) {
+        const corrected = findNearbyWalkable(enemy.position, isWalkable, enemy.major ? 5.5 : 3.5);
+        enemy.position.copy(corrected);
+      }
       enemy.attackCooldown = Math.max(0, enemy.attackCooldown - delta);
       enemy.rangedCooldown = Math.max(0, enemy.rangedCooldown - delta);
       enemy.stagger = Math.max(0, enemy.stagger - delta);
@@ -313,7 +340,7 @@ export class CombatSystem {
         if (movement !== 0) {
           const slow = enemy.slowed > 0 ? 0.55 : 1;
           const next = enemy.position.clone().addScaledVector(direction, enemy.speed * slow * movement * delta);
-          if (isWalkable(next)) enemy.position.copy(next);
+          if (isWalkable(next, enemy.major ? 0.8 : 0.5)) enemy.position.copy(next);
         }
       }
 
