@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { isMajorProcess, processById } from '../content/chave-processes.js';
+import { isProcessObjective, objectiveByArchetype } from '../content/process-objectives.js';
 import { makeMaterial } from './scene-factory.js';
 
 export function playerMesh(color, position) {
@@ -27,6 +28,10 @@ function enemyGeometry(archetype, elite) {
   if (archetype === 'seizure-chief') return new THREE.BoxGeometry(2.35, 2.25, 2.35, 1, 1, 1);
   if (archetype === 'route-runner') return new THREE.ConeGeometry(1.35, 3, 5, 1, false);
   if (archetype === 'warden') return new THREE.BoxGeometry(2.55, 3.45, 1.8, 1, 2, 1);
+  if (archetype === 'ledger-stamp') return new THREE.CylinderGeometry(0.78, 0.98, 1.15, 8);
+  if (archetype === 'claim-lock') return new THREE.BoxGeometry(1.5, 1.4, 1.5);
+  if (archetype === 'route-anchor') return new THREE.ConeGeometry(0.95, 2.1, 5);
+  if (archetype === 'lock-pylon') return new THREE.CylinderGeometry(0.62, 0.85, 2.5, 6);
   return elite ? new THREE.OctahedronGeometry(1.18, 0) : new THREE.DodecahedronGeometry(0.78, 0);
 }
 
@@ -102,19 +107,80 @@ function addWardenParts(group, color) {
   group.add(lock);
 }
 
+function addObjectiveParts(group, archetype, color) {
+  const glow = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.72, depthWrite: false });
+  const dark = makeMaterial(0x17131b, { metalness: 0.72, roughness: 0.24, emissive: color, emissiveIntensity: 0.16 });
+
+  if (archetype === 'ledger-stamp') {
+    const seal = new THREE.Mesh(new THREE.TorusGeometry(1.08, 0.12, 6, 24), glow);
+    seal.rotation.x = Math.PI / 2;
+    seal.position.y = -0.52;
+    group.add(seal);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.65, 1.65), dark);
+    blade.rotation.z = Math.PI / 4;
+    group.add(blade);
+  }
+
+  if (archetype === 'claim-lock') {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.22, 7, 28), glow);
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
+    for (const side of [-1, 1]) {
+      const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.9, 0.48), dark);
+      jaw.position.x = side * 1.03;
+      jaw.rotation.z = side * 0.22;
+      group.add(jaw);
+    }
+  }
+
+  if (archetype === 'route-anchor') {
+    for (const tilt of [-0.66, 0.66]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.1, 5, 22), glow);
+      ring.rotation.set(Math.PI / 2, tilt, tilt * 0.5);
+      group.add(ring);
+    }
+    const pointer = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.25, 4), dark);
+    pointer.position.y = 1.18;
+    group.add(pointer);
+  }
+
+  if (archetype === 'lock-pylon') {
+    const cage = new THREE.Mesh(new THREE.TorusGeometry(1.04, 0.12, 6, 26), glow);
+    cage.rotation.x = Math.PI / 2;
+    cage.position.y = -0.85;
+    group.add(cage);
+    for (const side of [-1, 1]) {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.9, 0.18), dark);
+      bar.position.x = side * 0.92;
+      group.add(bar);
+    }
+  }
+
+  const radius = archetype === 'lock-pylon' ? 1.5 : 1.3;
+  const ground = new THREE.Mesh(new THREE.RingGeometry(radius * 0.72, radius, 32), glow.clone());
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = archetype === 'lock-pylon' ? -1.24 : -0.72;
+  ground.material.opacity = 0.34;
+  group.add(ground);
+}
+
 export function enemyMesh(position, elite = false, interlaced = false, archetype = 'pursuer') {
   const major = isMajorProcess(archetype);
+  const objective = isProcessObjective(archetype);
   const process = major ? processById(archetype) : null;
-  const color = process?.color ?? (interlaced ? 0x7c61d8 : archetype === 'gunner' ? 0x4f79ba : elite ? 0xd76848 : 0xa43e3b);
+  const objectiveDefinition = objective ? objectiveByArchetype(archetype) : null;
+  const color = process?.color
+    ?? objectiveDefinition?.color
+    ?? (interlaced ? 0x7c61d8 : archetype === 'gunner' ? 0x4f79ba : elite ? 0xd76848 : 0xa43e3b);
   const core = new THREE.Mesh(
     enemyGeometry(archetype, elite),
     makeMaterial(color, {
-      metalness: major ? 0.72 : 0.42,
-      roughness: major ? 0.2 : 0.32,
+      metalness: major || objective ? 0.72 : 0.42,
+      roughness: major || objective ? 0.2 : 0.32,
       emissive: color,
-      emissiveIntensity: interlaced || major ? 0.55 : 0.2,
+      emissiveIntensity: interlaced || major || objective ? 0.55 : 0.2,
       transparent: interlaced,
-      opacity: interlaced ? 0.88 : 1,
+      opacity: interlaced ? 0.9 : 1,
     }),
   );
   core.castShadow = true;
@@ -133,11 +199,13 @@ export function enemyMesh(position, elite = false, interlaced = false, archetype
   if (archetype === 'seizure-chief') addSeizureChiefParts(group, color);
   if (archetype === 'route-runner') addRouteRunnerParts(group, color);
   if (archetype === 'warden') addWardenParts(group, color);
+  if (objective) addObjectiveParts(group, archetype, color);
 
   group.position.copy(position);
-  group.position.y = major ? 1.85 : elite ? 1.4 : 1;
+  group.position.y = major ? 1.85 : objective ? (archetype === 'lock-pylon' ? 1.3 : 0.9) : elite ? 1.4 : 1;
   group.userData.core = core;
   group.userData.majorProcess = major ? archetype : null;
+  group.userData.processObjective = objective ? archetype : null;
   return group;
 }
 
