@@ -4,46 +4,87 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#06080d" />
-    <title>ABRIR — Prototype</title>
+    <meta name="description" content="ABRIR — a deterministic Three.js action-looter prototype built around generated and interlaced room states." />
+    <title>ABRIR — Field Prototype</title>
   </head>
   <body>
     <div id="app">
       <canvas id="game-canvas" aria-label="ABRIR game prototype"></canvas>
       <div id="vignette"></div>
+      <div id="interlace-flash"></div>
+
       <section id="hud" aria-live="polite">
         <div class="hud-row hud-top">
           <div class="brand-block">
-            <span class="eyebrow">INSTITUTO TRAVESSIA // FIELD TEST</span>
+            <span class="eyebrow">INSTITUTO TRAVESSIA // LIVE FIELD STATE</span>
             <strong>ABRIR</strong>
           </div>
-          <div class="seed-block">
-            <span>MAP STATE</span>
-            <code id="seed-label">—</code>
+
+          <section class="contract-card" aria-label="Current field contract">
+            <span class="eyebrow">ACTIVE CONTRACT</span>
+            <strong id="contract-title">—</strong>
+            <p id="contract-description">Loading contract…</p>
+            <div id="contract-checks"></div>
+          </section>
+
+          <div class="map-stack">
+            <div class="seed-block">
+              <span>MAP STATE</span>
+              <code id="seed-label">—</code>
+            </div>
+            <canvas id="minimap-canvas" aria-label="Generated room map"></canvas>
           </div>
         </div>
 
+        <aside id="team-strip" aria-label="Operative squad"></aside>
+
         <div class="hud-row hud-bottom">
           <div class="operative-card">
-            <div class="portrait-placeholder" id="operative-mark">C</div>
-            <div>
+            <div class="portrait-placeholder" id="operative-mark">S</div>
+            <div class="operative-main">
               <span class="eyebrow">ACTIVE OPERATIVE</span>
-              <strong id="operative-name">Caio Vilar</strong>
+              <strong id="operative-name">Sócrates</strong>
               <div class="meter"><i id="health-fill"></i></div>
               <small id="kit-label">RANGED / COMBAT MEDIC</small>
             </div>
+            <div class="ability-readout">
+              <div>
+                <span><kbd>R</kbd> <b id="ability-name">FIELD CLINIC</b></span>
+                <i><em id="ability-fill"></em></i>
+                <small id="ability-time">READY</small>
+              </div>
+              <div>
+                <span><kbd>SPACE</kbd> <b>DODGE</b></span>
+                <i><em id="dodge-fill"></em></i>
+                <small id="dodge-time">READY</small>
+              </div>
+            </div>
           </div>
 
-          <div class="run-readout">
-            <div><span>ROOM</span><strong id="room-label">ENTRY</strong></div>
-            <div><span>RECOVERED</span><strong id="loot-label">₢ 0</strong></div>
-            <div><span>INTERLACE</span><strong id="timer-label">01:30</strong></div>
+          <div class="run-center">
+            <div class="run-readout">
+              <div><span>ROOM</span><strong id="room-label">ENTRY</strong></div>
+              <div><span>RECOVERED</span><strong id="loot-label">₢ 0</strong></div>
+              <div><span>INTERLACE</span><strong id="timer-label">01:30</strong></div>
+            </div>
+            <div class="threat-track">
+              <span>MAP ATTENTION</span>
+              <i><em id="threat-fill"></em></i>
+            </div>
           </div>
 
           <div class="controls-card">
             <span class="eyebrow">FIELD CONTROLS</span>
-            <p><kbd>WASD</kbd> move · <kbd>CLICK</kbd> attack · <kbd>Q</kbd> switch · <kbd>E</kbd> interact</p>
+            <p><kbd>WASD</kbd> move · <kbd>CLICK</kbd> attack · <kbd>Q</kbd> operative</p>
+            <p><kbd>R</kbd> ability · <kbd>SPACE</kbd> dodge · <kbd>E</kbd> recover/extract</p>
           </div>
         </div>
+      </section>
+
+      <section id="boss-banner" aria-live="assertive">
+        <span>A CHAVE GERAL PROCESS</span>
+        <strong id="boss-name">THE AUDITOR</strong>
+        <div><i id="boss-health-fill"></i></div>
       </section>
 
       <aside id="event-feed" aria-label="Mission event feed"></aside>
@@ -51,17 +92,31 @@
 
       <dialog id="briefing">
         <div class="briefing-shell">
-          <span class="eyebrow">AUTHORIZED TRAVERSAL // TEST 001</span>
-          <h1>THE INTERLACED ROOM</h1>
+          <div class="briefing-header">
+            <div>
+              <span class="eyebrow">AUTHORIZED TRAVERSAL // GENERATED CONTRACT</span>
+              <h1>THE INTERLACED ROOM</h1>
+            </div>
+            <div class="profile-chip">
+              <span id="profile-rank">RANK 1</span>
+              <strong id="profile-title">PROVISIONAL OPERATIVE</strong>
+              <small id="profile-scrip">₢ 0 FIELD SCRIP</small>
+            </div>
+          </div>
           <p>
             Recover objects from a generated server-state. The Institute insists the rooms are not real.
-            The objects disagree.
+            The objects, hazards, and rival accounting department disagree.
           </p>
+          <section class="brief-contract">
+            <span>FIELD CONTRACT</span>
+            <strong id="brief-contract-title">—</strong>
+            <p id="brief-contract-copy">—</p>
+          </section>
           <div class="mission-grid">
-            <article><b>1.</b><span>Enter through the Travessia portal.</span></article>
-            <article><b>2.</b><span>Clear rooms and recover saleable objects.</span></article>
-            <article><b>3.</b><span>Stay past the safe window to trigger an interlace.</span></article>
-            <article><b>4.</b><span>Return to extraction alive.</span></article>
+            <article><b>1.</b><span>Traverse a generated map whose state can be saved and replayed.</span></article>
+            <article><b>2.</b><span>Switch among four operatives, each with a distinct combat kit.</span></article>
+            <article><b>3.</b><span>Claim objects, activate shrines, and decide how long to remain.</span></article>
+            <article><b>4.</b><span>Survive the interlace, the map director, and possible Chave Geral audit.</span></article>
           </div>
           <button id="begin-button" autofocus>OPEN THE PASSAGE</button>
           <button id="export-button" class="secondary">EXPORT CURRENT MAP STATE</button>
@@ -70,14 +125,17 @@
 
       <dialog id="debrief">
         <div class="briefing-shell">
-          <span class="eyebrow">RUN CLOSED</span>
+          <span class="eyebrow">RUN CLOSED // INSTITUTE ACCOUNTING COMPLETE</span>
           <h1 id="debrief-title">EXTRACTION COMPLETE</h1>
           <p id="debrief-copy"></p>
           <div class="debrief-numbers">
             <div><span>Recovered value</span><strong id="debrief-value">₢ 0</strong></div>
             <div><span>Institute retention</span><strong id="debrief-cut">₢ 0</strong></div>
+            <div><span>Contract bonus</span><strong id="debrief-bonus">₢ 0</strong></div>
             <div><span>Field payout</span><strong id="debrief-payout">₢ 0</strong></div>
+            <div><span>Updated rank</span><strong id="debrief-rank">1</strong></div>
           </div>
+          <p class="contract-result" id="debrief-contract">CONTRACT STATUS —</p>
           <button id="restart-button">GENERATE ANOTHER RUN</button>
         </div>
       </dialog>
