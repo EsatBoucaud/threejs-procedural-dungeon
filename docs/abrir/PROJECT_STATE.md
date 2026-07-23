@@ -8,6 +8,8 @@ ABRIR is being developed on the `abrir-mvp` branch of the existing Three.js proc
 
 The inherited generator provides deterministic seeded layouts, connected room graphs, semantic room roles, tile grids, props, spawns, difficulty depth, and Three.js rendering.
 
+The gameplay runtime now loads a saved map snapshot independently from the forge and uses generated room semantics for traversal, combat activation, room locking, and loot placement.
+
 ## MVP definition
 
 The first playable slice is a short single-player run with:
@@ -44,13 +46,18 @@ Implemented pipeline:
 - [x] First generated ABRIR map committed as a versioned JSON snapshot.
 - [x] GitHub Actions regenerate and validate the saved map when its source changes.
 - [x] Separate `game.html` runtime loads the saved state and reconstructs its floor, walls, pools, semantic rooms, and entrance.
-- [x] Grey-box player movement and tile collision work against the saved generated grid.
-- [x] Manual interlacing visual-state test added with the `I` key.
+- [x] Two-operative grey-box pair with switching and partner follow.
+- [x] Ranged projectile attack and melee arc attack.
+- [x] Secondary healing and area-damage abilities.
+- [x] Dodge, health, contact damage, incapacitation, and test restart.
+- [x] Generated combat room activation, visible room barriers, enemy wave, room-clear state, and loot pickup.
+- [x] Combat HUD reshaped around the intended illustrated UI composition rather than a generic developer overlay.
+- [x] Manual interlacing test affects lighting, floor treatment, enemy speed, damage, and recovered value.
 - [ ] Extract procedural generation from renderer-heavy `src/main.js` into a clean reusable module.
 - [ ] Add browser-side export/download controls to the visual forge.
-- [ ] Replace the placeholder pawn with the first ranged/melee pair.
-- [ ] Add character switching, attacks, enemies, loot, and room-clear state.
+- [ ] Replace primitive operative geometry and portrait blocks with supplied character assets.
 - [ ] Add extraction and post-run results.
+- [ ] Turn manual interlacing into a timed extract-or-stay escalation.
 
 ## Current test map
 
@@ -67,4 +74,10 @@ The fantasy-facing theme is still inherited placeholder dressing. ABRIR environm
 
 ## Immediate next task
 
-Turn the saved-map traversal test into the first combat room: add the ranged/melee pair as data-driven placeholder kits, switch control between them, keep the inactive partner following, and lock one generated combat room until its enemies are cleared.
+Complete the first run loop after combat:
+
+1. designate the generated entrance as the initial extraction point;
+2. require the pair to carry recovered value back through the map;
+3. offer extract-or-stay on return;
+4. make staying trigger timed interlacing and a harder second encounter;
+5. show a compact post-run result screen with retained and lost value.
