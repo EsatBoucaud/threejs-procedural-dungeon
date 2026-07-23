@@ -1,12 +1,22 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vite';
 
-// Single-page Vite app. `base: './'` makes the production build path-relative, so
-// the contents of `dist/` can be dropped onto any static host (Netlify, GitHub
-// Pages, itch.io, a plain folder) and just work — no server config required.
+const root = fileURLToPath(new URL('.', import.meta.url));
+
+// Multi-page Vite build: the original Three.js forge remains the map-authoring
+// surface while game.html proves the saved JSON can drive a separate runtime.
 export default defineConfig({
   base: './',
   build: {
     target: 'es2020',
     outDir: 'dist',
+    rollupOptions: {
+      input: {
+        forge: resolve(root, 'index.html'),
+        game: resolve(root, 'game.html'),
+      },
+    },
   },
 });
