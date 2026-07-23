@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { isMajorProcess, processById } from '../content/chave-processes.js';
+import { isProcessObjective, objectiveByArchetype } from '../content/process-objectives.js';
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -25,6 +26,19 @@ function distanceToSegment(point, start, end) {
 }
 
 function archetypeStats(archetype, elite) {
+  const objective = objectiveByArchetype(archetype);
+  if (objective) {
+    return {
+      health: objective.health,
+      speed: 0,
+      damage: 0,
+      rangedCooldown: 0,
+      minRange: 0,
+      maxRange: 0,
+      projectileSpeed: 0,
+      hitRadius: archetype === 'lock-pylon' ? 1.5 : 1.25,
+    };
+  }
   if (archetype === 'auditor') {
     return { health: 720, speed: 2.7, damage: 28, rangedCooldown: 1.05, minRange: 6.5, maxRange: 13, projectileSpeed: 12, hitRadius: 1.9 };
   }
@@ -54,10 +68,14 @@ function archetypeStats(archetype, elite) {
 
 function projectileColor(enemy) {
   if (isMajorProcess(enemy.archetype)) return processById(enemy.archetype).color;
+  const objective = objectiveByArchetype(enemy.archetype);
+  if (objective) return objective.color;
   return enemy.interlaced ? 0xb777d5 : 0xe46b58;
 }
 
 function terminationMessage(enemy) {
+  const objective = objectiveByArchetype(enemy.archetype);
+  if (objective) return `${objective.singular} destroyed.`;
   if (enemy.archetype === 'auditor') return 'Audit process terminated.';
   if (enemy.archetype === 'seizure-chief') return 'Confiscation authority terminated.';
   if (enemy.archetype === 'route-runner') return 'Route interference process terminated.';
@@ -65,8 +83,8 @@ function terminationMessage(enemy) {
   return enemy.elite ? 'Elite process terminated.' : 'Hostile process terminated.';
 }
 
-function findNearbyWalkable(position, isWalkable, radius = 4) {
-  if (isWalkable(position, 0.5)) return position;
+function findNearbyWalkable(position, isWalkable, radius = 4, margin = 0.5) {
+  if (isWalkable(position, margin)) return position;
   for (let ring = 1; ring <= 4; ring += 1) {
     const distance = radius * (ring / 4);
     for (let index = 0; index < 12; index += 1) {
@@ -74,7 +92,7 @@ function findNearbyWalkable(position, isWalkable, radius = 4) {
       const candidate = position.clone();
       candidate.x += Math.cos(angle) * distance;
       candidate.z += Math.sin(angle) * distance;
-      if (isWalkable(candidate, 0.5)) return candidate;
+      if (isWalkable(candidate, margin)) return candidate;
     }
   }
   return position;
@@ -92,9 +110,10 @@ export class CombatSystem {
   spawnEnemy({ x, z, roomId, elite, interlaced, difficulty, archetype = 'pursuer' }) {
     const position = new THREE.Vector3(x, 0, z);
     const major = isMajorProcess(archetype);
+    const objective = isProcessObjective(archetype);
     const stats = archetypeStats(archetype, elite);
-    const difficultyScale = major ? 0.18 : 0.55;
-    const maxHealth = stats.health * (1 + difficulty * difficultyScale) * (interlaced ? 1.14 : 1);
+    const difficultyScale = major ? 0.18 : objective ? 0.08 : 0.55;
+    const maxHealth = stats.health * (1 + difficulty * difficultyScale) * (interlaced && !objective ? 1.14 : 1);
     const mesh = this.renderer.createEnemy(position, elite, interlaced, archetype);
     const phase = (stableNumber(roomId) + Math.round(x * 13) + Math.round(z * 7)) % 40;
     const enemy = {
@@ -105,9 +124,11 @@ export class CombatSystem {
       interlaced,
       archetype,
       major,
+      objective,
       maxHealth,
       health: maxHealth,
-      speed: stats.speed * (interlaced && !major ? 1.12 : 1),
+      damageTakenMultiplier: 1,
+      speed: stats.speed * (interlaced && !major && !objective ? 1.12 : 1),
       damage: stats.damage * (1 + difficulty * 0.35),
       attackCooldown: phase / 100,
       rangedCooldown: stats.rangedCooldown,
@@ -134,6 +155,10 @@ export class CombatSystem {
 
   getLivingEnemyByArchetype(archetype) {
     return this.enemies.find((enemy) => !enemy.dead && enemy.archetype === archetype) ?? null;
+  }
+
+  livingEnemiesByArchetype(archetype) {
+    return this.enemies.filter((enemy) => !enemy.dead && enemy.archetype === archetype);
   }
 
   relocateEnemy(enemy, position) {
@@ -170,10 +195,12 @@ export class CombatSystem {
     for (const enemy of this.enemies) {
       if (enemy.dead || enemy.position.distanceTo(player.position) > attack.radius) continue;
       hit = true;
-      const push = enemy.position.clone().sub(player.position).setY(0);
-      if (push.lengthSq() > 0.01) push.normalize().multiplyScalar(attack.knockback * 0.12);
-      enemy.position.add(push);
-      enemy.stagger = Math.max(enemy.stagger, enemy.major ? 0.18 : 0.32);
+      if (!enemy.objective) {
+        const push = enemy.position.clone().sub(player.position).setY(0);
+        if (push.lengthSq() > 0.01) push.normalize().multiplyScalar(attack.knockback * 0.12);
+        enemy.position.add(push);
+      }
+      enemy.stagger = Math.max(enemy.stagger, enemy.objective ? 0 : enemy.major ? 0.18 : 0.32);
       this.damageEnemy(enemy, attack.damage, operative, player);
     }
     if (!hit) this.callbacks.onFeed?.(`${operative.name} breaks the air. Nothing breaks back.`, '');
@@ -185,8 +212,8 @@ export class CombatSystem {
       this.callbacks.onHeal?.(24, true);
       for (const enemy of this.enemies) {
         if (enemy.dead || enemy.position.distanceTo(player.position) > 7.2) continue;
-        enemy.weakened = 6;
-        enemy.stagger = Math.max(enemy.stagger, enemy.major ? 0.25 : 0.5);
+        enemy.weakened = enemy.objective ? 0 : 6;
+        enemy.stagger = Math.max(enemy.stagger, enemy.objective ? 0 : enemy.major ? 0.25 : 0.5);
         this.damageEnemy(enemy, 20, operative, player);
       }
       this.callbacks.onFeed?.('Sócrates establishes a field clinic in disputed space.', 'good');
@@ -197,10 +224,12 @@ export class CombatSystem {
       this.renderer.createPulse(player.position, operative.color, 5.2);
       for (const enemy of this.enemies) {
         if (enemy.dead || enemy.position.distanceTo(player.position) > 5.2) continue;
-        const push = enemy.position.clone().sub(player.position).setY(0);
-        if (push.lengthSq() > 0.01) push.normalize().multiplyScalar(enemy.major ? 0.8 : 2.8);
-        enemy.position.add(push);
-        enemy.stagger = Math.max(enemy.stagger, enemy.major ? 0.42 : 1.15);
+        if (!enemy.objective) {
+          const push = enemy.position.clone().sub(player.position).setY(0);
+          if (push.lengthSq() > 0.01) push.normalize().multiplyScalar(enemy.major ? 0.8 : 2.8);
+          enemy.position.add(push);
+        }
+        enemy.stagger = Math.max(enemy.stagger, enemy.objective ? 0 : enemy.major ? 0.42 : 1.15);
         this.damageEnemy(enemy, 82, operative, player);
       }
       this.callbacks.onFeed?.('Zélia converts the floor into an argument.', 'good');
@@ -223,7 +252,7 @@ export class CombatSystem {
       const routeDistance = distanceToSegment(enemy.position, player.position, destination);
       const hit = operative.id === 'lia' ? routeDistance < 1.4 : enemy.position.distanceTo(destination) < 4.2;
       if (!hit) continue;
-      enemy.stagger = Math.max(enemy.stagger, enemy.major ? 0.28 : operative.id === 'lia' ? 0.6 : 0.9);
+      enemy.stagger = Math.max(enemy.stagger, enemy.objective ? 0 : enemy.major ? 0.28 : operative.id === 'lia' ? 0.6 : 0.9);
       this.damageEnemy(enemy, operative.id === 'lia' ? 58 : 64, operative, player);
     }
     if (operative.id === 'kindred') player.invulnerable = Math.max(player.invulnerable, 1.1);
@@ -315,8 +344,9 @@ export class CombatSystem {
   updateEnemies(delta, player, isWalkable) {
     for (const enemy of this.enemies) {
       if (enemy.dead) continue;
-      if (!isWalkable(enemy.position, enemy.major ? 0.8 : 0.5)) {
-        const corrected = findNearbyWalkable(enemy.position, isWalkable, enemy.major ? 5.5 : 3.5);
+      const margin = enemy.major ? 0.8 : enemy.objective ? 0.62 : 0.5;
+      if (!isWalkable(enemy.position, margin)) {
+        const corrected = findNearbyWalkable(enemy.position, isWalkable, enemy.major ? 5.5 : 3.5, margin);
         enemy.position.copy(corrected);
       }
       enemy.attackCooldown = Math.max(0, enemy.attackCooldown - delta);
@@ -324,6 +354,12 @@ export class CombatSystem {
       enemy.stagger = Math.max(0, enemy.stagger - delta);
       enemy.weakened = Math.max(0, enemy.weakened - delta);
       enemy.slowed = Math.max(0, enemy.slowed - delta);
+      if (enemy.objective) {
+        enemy.mesh.rotation.y += delta * (enemy.archetype === 'route-anchor' ? 1.5 : 0.55);
+        enemy.mesh.position.x = enemy.position.x;
+        enemy.mesh.position.z = enemy.position.z;
+        continue;
+      }
       const rotationSpeed = enemy.archetype === 'route-runner' ? 2.4 : enemy.major ? 0.48 : enemy.elite ? 0.8 : 1.2;
       enemy.mesh.rotation.y += delta * rotationSpeed;
       if (!enemy.major) enemy.mesh.rotation.x += delta * (enemy.interlaced ? 1.1 : 0.35);
@@ -340,7 +376,7 @@ export class CombatSystem {
         if (movement !== 0) {
           const slow = enemy.slowed > 0 ? 0.55 : 1;
           const next = enemy.position.clone().addScaledVector(direction, enemy.speed * slow * movement * delta);
-          if (isWalkable(next, enemy.major ? 0.8 : 0.5)) enemy.position.copy(next);
+          if (isWalkable(next, margin)) enemy.position.copy(next);
         }
       }
 
@@ -360,16 +396,17 @@ export class CombatSystem {
   }
 
   damageEnemy(enemy, amount, operative, player) {
-    enemy.health -= amount;
+    const applied = amount * (enemy.damageTakenMultiplier ?? 1);
+    enemy.health -= applied;
     const core = enemy.mesh.userData.core ?? enemy.mesh;
     const ratio = clamp(enemy.health / enemy.maxHealth, 0.2, 1);
-    core.scale.setScalar(enemy.major ? 0.82 + ratio * 0.18 : clamp(ratio, 0.45, 1));
+    core.scale.setScalar(enemy.major ? 0.82 + ratio * 0.18 : enemy.objective ? 0.78 + ratio * 0.22 : clamp(ratio, 0.45, 1));
     if (enemy.major) this.callbacks.onBossHealth?.(Math.max(0, enemy.health), enemy.maxHealth);
     if (enemy.health > 0) return;
     enemy.dead = true;
     this.renderer.removeObject(enemy.mesh);
-    if (operative.id === 'zelia-amato') player.damageResistance = 2.8;
-    if (operative.id === 'kindred') this.callbacks.onHeal?.(7, false);
+    if (!enemy.objective && operative.id === 'zelia-amato') player.damageResistance = 2.8;
+    if (!enemy.objective && operative.id === 'kindred') this.callbacks.onHeal?.(7, false);
     this.callbacks.onFeed?.(terminationMessage(enemy), 'good');
     this.callbacks.onEnemyKilled?.(enemy);
   }
