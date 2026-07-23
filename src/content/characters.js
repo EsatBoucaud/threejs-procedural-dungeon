@@ -1,104 +1,100 @@
-export const OPERATIVES = [
-  {
-    id: 'socrates',
-    name: 'Sócrates',
-    mark: 'S',
-    role: 'RANGED / COMBAT MEDIC',
-    maxHealth: 118,
-    moveSpeed: 9.4,
-    color: 0x58d2c7,
-    attack: {
-      kind: 'projectile',
-      cooldown: 0.27,
-      damage: 25,
-      projectileSpeed: 25,
-      range: 24,
-      pierce: 0,
-    },
-    ability: {
-      id: 'field-clinic',
-      name: 'FIELD CLINIC',
-      cooldown: 13,
-      description: 'Heals the squad and weakens nearby hostile processes.',
-    },
-    dodge: { cooldown: 1.15, distance: 5.2 },
-    fieldTrait: 'Every third projectile hit restores 3 health.',
-  },
+import { combatKitById } from './combat-kits.js';
+
+export const CHARACTERS = [
   {
     id: 'zelia-amato',
     name: 'Zélia Amato',
     mark: 'Z',
-    role: 'MELEE / BREACHER',
-    maxHealth: 165,
-    moveSpeed: 8.3,
     color: 0xe0b660,
-    attack: {
-      kind: 'melee',
-      cooldown: 0.58,
-      damage: 49,
-      radius: 3.35,
-      knockback: 8.2,
-    },
-    ability: {
-      id: 'kiln-breaker',
-      name: 'KILN BREAKER',
-      cooldown: 11,
-      description: 'A heavy radial fracture that launches and stuns enemies.',
-    },
-    dodge: { cooldown: 1.35, distance: 4.5 },
-    fieldTrait: 'Melee eliminations grant temporary damage resistance.',
+    durability: 1.08,
+    mobility: 0.96,
+    fieldNote: 'Direct, physically committed, and unwilling to leave a teammate behind without an argument.',
+    defaultKitId: 'breacher',
   },
   {
     id: 'lia',
     name: 'Lia',
     mark: 'L',
-    role: 'RANGED / ROUTE CONTROLLER',
-    maxHealth: 105,
-    moveSpeed: 10.1,
     color: 0x7ea8ff,
-    attack: {
-      kind: 'projectile',
-      cooldown: 0.36,
-      damage: 19,
-      projectileSpeed: 29,
-      range: 27,
-      pierce: 1,
-    },
-    ability: {
-      id: 'route-fold',
-      name: 'ROUTE FOLD',
-      cooldown: 9,
-      description: 'Folds distance, relocating Lia and cutting everything on the route.',
-    },
-    dodge: { cooldown: 0.9, distance: 5.8 },
-    fieldTrait: 'Projectiles pierce one hostile and gain damage after doing so.',
+    durability: 0.94,
+    mobility: 1.06,
+    fieldNote: 'Reads routes quickly and treats distance as something that can be negotiated.',
+    defaultKitId: 'route-controller',
   },
   {
-    id: 'kindred',
-    name: 'Kindred',
-    mark: 'K',
-    role: 'MELEE / NIGHT SKIRMISHER',
-    maxHealth: 132,
-    moveSpeed: 10.5,
+    id: 'chilindo',
+    name: 'Chilindo',
+    mark: 'C',
     color: 0xd68bd2,
-    attack: {
-      kind: 'melee',
-      cooldown: 0.38,
-      damage: 31,
-      radius: 2.65,
-      knockback: 4.8,
-    },
-    ability: {
-      id: 'night-passage',
-      name: 'NIGHT PASSAGE',
-      cooldown: 10,
-      description: 'Phases through a short route and tears at enemies on exit.',
-    },
-    dodge: { cooldown: 0.78, distance: 6.1 },
-    fieldTrait: 'Close-range eliminations restore a small amount of health.',
+    durability: 1,
+    mobility: 1.04,
+    fieldNote: 'Moves well under unstable conditions and remains difficult to predict after the safe window.',
+    defaultKitId: 'night-skirmisher',
+  },
+  {
+    id: 'socrates',
+    name: 'Sócrates',
+    mark: 'S',
+    color: 0x58d2c7,
+    durability: 0.98,
+    mobility: 1,
+    fieldNote: 'Keeps the team functioning while paying close attention to what the Institute leaves out.',
+    defaultKitId: 'field-medic',
   },
 ];
 
+// This array represents the characters controlled by the current local player.
+// In two-player mode it contains two resolved character/kit combinations.
+// In four-player mode it contains one. The network layer will provide the
+// other players' live entities later without changing this ownership contract.
+export const OPERATIVES = [];
+
+export function characterById(id) {
+  return CHARACTERS.find((character) => character.id === id) ?? CHARACTERS[0];
+}
+
+export function resolveCharacterLoadout(assignment) {
+  const character = characterById(assignment.characterId);
+  const kit = combatKitById(assignment.kitId ?? character.defaultKitId);
+  return {
+    // CombatSystem currently uses this field to select behavior. Character
+    // identity remains separate so any character can equip any combat kit.
+    id: kit.behaviorId,
+    characterId: character.id,
+    kitId: kit.id,
+    playerId: assignment.playerId,
+    assignmentId: assignment.assignmentId,
+    name: character.name,
+    mark: character.mark,
+    color: character.color,
+    role: kit.role,
+    kitName: kit.name,
+    combatFamily: kit.family,
+    maxHealth: Math.round(kit.maxHealth * character.durability),
+    moveSpeed: Number((kit.moveSpeed * character.mobility).toFixed(2)),
+    attack: structuredClone(kit.attack),
+    ability: structuredClone(kit.ability),
+    dodge: structuredClone(kit.dodge),
+    fieldTrait: kit.fieldTrait,
+    fieldNote: character.fieldNote,
+  };
+}
+
+export function applyDeployment(deployment) {
+  const localPlayerId = deployment?.localPlayerId ?? 'player-1';
+  const assignments = Array.isArray(deployment?.assignments)
+    ? deployment.assignments.filter((assignment) => assignment.playerId === localPlayerId)
+    : [];
+  const fallbackAssignments = [
+    { assignmentId: 'slot-1', playerId: 'player-1', characterId: 'zelia-amato', kitId: 'breacher' },
+    { assignmentId: 'slot-2', playerId: 'player-1', characterId: 'socrates', kitId: 'field-medic' },
+  ];
+  const resolved = (assignments.length > 0 ? assignments : fallbackAssignments)
+    .map(resolveCharacterLoadout);
+  OPERATIVES.splice(0, OPERATIVES.length, ...resolved);
+  return OPERATIVES;
+}
+
 export function operativeById(id) {
-  return OPERATIVES.find((operative) => operative.id === id) ?? OPERATIVES[0];
+  return OPERATIVES.find((operative) => operative.characterId === id || operative.id === id) ?? OPERATIVES[0];
 }

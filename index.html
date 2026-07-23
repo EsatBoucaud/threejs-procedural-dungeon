@@ -36,16 +36,16 @@
           </div>
         </div>
 
-        <aside id="team-strip" aria-label="Operative squad"></aside>
+        <aside id="team-strip" aria-label="Locally controlled characters"></aside>
 
         <div class="hud-row hud-bottom">
           <div class="operative-card">
             <div class="portrait-placeholder" id="operative-mark">S</div>
             <div class="operative-main">
-              <span class="eyebrow">ACTIVE OPERATIVE</span>
+              <span class="eyebrow">ACTIVE CHARACTER</span>
               <strong id="operative-name">Sócrates</strong>
               <div class="meter"><i id="health-fill"></i></div>
-              <small id="kit-label">RANGED / COMBAT MEDIC</small>
+              <small id="kit-label">FIELD MEDIC</small>
             </div>
             <div class="ability-readout">
               <div>
@@ -75,7 +75,7 @@
 
           <div class="controls-card">
             <span class="eyebrow">FIELD CONTROLS</span>
-            <p><kbd>WASD</kbd> move · <kbd>CLICK</kbd> attack · <kbd>Q</kbd> operative</p>
+            <p><kbd>WASD</kbd> move · <kbd>CLICK</kbd> attack · <kbd>Q</kbd> swap assigned character</p>
             <p><kbd>R</kbd> ability · <kbd>SPACE</kbd> dodge · <kbd>E</kbd> recover/extract</p>
           </div>
         </div>
@@ -94,7 +94,7 @@
         <div class="briefing-shell">
           <div class="briefing-header">
             <div>
-              <span class="eyebrow">AUTHORIZED TRAVERSAL // GENERATED CONTRACT</span>
+              <span class="eyebrow">AUTHORIZED TRAVERSAL // MULTIPLAYER DEPLOYMENT</span>
               <h1>THE INTERLACED ROOM</h1>
             </div>
             <div class="profile-chip">
@@ -104,21 +104,24 @@
             </div>
           </div>
           <p>
-            Recover objects from a generated server-state. The Institute insists the rooms are not real.
-            The objects, hazards, and rival accounting department disagree.
+            Four characters enter every authorization. In two-player mode, each player owns two and can swap between them.
+            In four-player mode, each player owns one. Combat kits are chosen separately from character identity.
           </p>
           <section class="brief-contract">
             <span>FIELD CONTRACT</span>
             <strong id="brief-contract-title">—</strong>
             <p id="brief-contract-copy">—</p>
           </section>
+
+          <section id="deployment-builder" class="deployment-builder" aria-label="Multiplayer deployment"></section>
+
           <div class="mission-grid">
-            <article><b>1.</b><span>Traverse a generated map whose state can be saved and replayed.</span></article>
-            <article><b>2.</b><span>Switch among four operatives, each with a distinct combat kit.</span></article>
-            <article><b>3.</b><span>Claim objects, activate shrines, and decide how long to remain.</span></article>
-            <article><b>4.</b><span>Survive the interlace, the map director, and possible Chave Geral audit.</span></article>
+            <article><b>1.</b><span>Choose two-player or four-player ownership before the passage opens.</span></article>
+            <article><b>2.</b><span>Assign every character once, then select any combat kit for each character.</span></article>
+            <article><b>3.</b><span>No role quota is enforced: the team may choose any melee/ranged composition.</span></article>
+            <article><b>4.</b><span>In two-player mode, <kbd>Q</kbd> swaps only between that player's assigned pair.</span></article>
           </div>
-          <button id="begin-button" autofocus>OPEN THE PASSAGE</button>
+          <button id="begin-button" autofocus>CONFIRM DEPLOYMENT AND OPEN PASSAGE</button>
           <button id="export-button" class="secondary">EXPORT CURRENT MAP STATE</button>
         </div>
       </dialog>

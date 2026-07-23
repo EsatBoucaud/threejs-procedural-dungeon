@@ -107,6 +107,17 @@ export class RunController {
     return OPERATIVES[this.activeOperativeIndex];
   }
 
+  get activeActor() {
+    return {
+      playerId: this.activeOperative.playerId ?? this.mapState.deployment?.localPlayerId ?? 'player-1',
+      characterId: this.activeOperative.characterId ?? this.activeOperative.id,
+      assignmentId: this.activeOperative.assignmentId,
+      kitId: this.activeOperative.kitId,
+      combatFamily: this.activeOperative.combatFamily,
+      incapacitated: this.health <= 0,
+    };
+  }
+
   get health() {
     return this.healthByOperative[this.activeOperativeIndex];
   }
@@ -234,7 +245,16 @@ export class RunController {
 
   interact() {
     if (this.finished) return;
-    if (this.mission.interact(this.player.position)) this.attemptExtraction();
+    if (this.mission.interact(this.player.position, this.activeActor)) this.attemptExtraction();
+  }
+
+  startFieldActivity(type, target, context = {}) {
+    if (this.finished) return null;
+    return this.mission.startFieldActivity(type, this.activeActor, target, context);
+  }
+
+  resolveFieldActivity(activityId, resolution = {}) {
+    return this.mission.resolveFieldActivity(activityId, resolution);
   }
 
   attemptExtraction() {
@@ -437,6 +457,7 @@ export class RunController {
     const contractBonus = success && contractStatus.complete ? this.contract.bonus + vaultWarrantBonus : vaultWarrantBonus;
     const multiplier = contractStatus.complete ? this.contract.riskMultiplier : 0.72;
     const payout = success ? Math.round(baseFieldPayout * multiplier + contractBonus) : Math.round(baseFieldPayout * 0.18);
+    const activity = this.mission.activitySnapshot();
     const result = {
       success,
       seed: this.mapState.seedLabel,
@@ -444,6 +465,7 @@ export class RunController {
       routeId: this.route?.id ?? null,
       routeName: this.route?.name ?? 'FIELD TEST',
       routeRewardMultiplier: this.route?.rewardMultiplier ?? 1,
+      deployment: structuredClone(this.mapState.deployment ?? null),
       elapsedSeconds: Math.round(this.elapsed),
       recovered: this.mission.recovered,
       seized: this.seizedAtExtraction,
@@ -464,6 +486,8 @@ export class RunController {
       majorProcessDefeated: this.director.majorDefeated,
       auditorDefeated: this.director.auditorDefeated,
       interlaceTriggered: this.interlaceTriggered,
+      activityLog: activity.log,
+      activityParticipation: activity.participation,
       timestamp: new Date().toISOString(),
     };
     result.profile = recordRun(result);
