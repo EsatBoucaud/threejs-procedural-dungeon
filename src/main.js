@@ -1,4 +1,5 @@
 import './ui/styles.css';
+import './ui/headquarters.css';
 import { seedForRoute } from './content/routes.js';
 import { generateMapState, validateMapState } from './core/dungeon-generator.js';
 import { RunController } from './game/run-controller.js';
@@ -68,6 +69,7 @@ let minimap;
 let started = false;
 let previousTime = performance.now();
 let lastResult = null;
+let pendingRoute = null;
 
 const headquarters = new Headquarters(elements.headquarters, {
   onDeploy: (route) => deployRoute(route),
@@ -127,7 +129,8 @@ function renderContract(contract, status) {
   elements.contractTitle.textContent = contract.title;
   elements.contractDescription.textContent = contract.description;
   elements.briefContractTitle.textContent = contract.title;
-  elements.briefContractCopy.textContent = `${contract.description} Completion pays ${formatCurrency(contract.bonus)} plus a ${contract.riskMultiplier.toFixed(2)}× field multiplier.`;
+  const routePay = mapState?.route?.rewardMultiplier ?? 1;
+  elements.briefContractCopy.textContent = `${contract.description} Completion pays ${formatCurrency(contract.bonus)}, a ${contract.riskMultiplier.toFixed(2)}× contract multiplier, and ${routePay.toFixed(2)}× route accounting.`;
   if (!status) return;
   elements.contractChecks.replaceChildren();
   for (const check of status.checks) {
@@ -202,7 +205,6 @@ async function loadInitialMap() {
     const validation = validateMapState(state);
     if (!validation.valid) throw new Error(validation.errors.join(' '));
     if (state.schemaVersion < 2) {
-      console.info('Upgrading committed map contract to the independent-interlace generator.');
       return generateMapState({
         seed: state.seedLabel ?? 'ABRIR-001',
         roomCount: state.settings?.roomCount ?? state.rooms.length ?? 24,
@@ -238,7 +240,9 @@ function installRun(state) {
 function begin() {
   started = true;
   elements.briefing.close();
-  feed('Passage opened. The field clock is already running.', 'good');
+  const routeName = pendingRoute?.name ?? mapState.route?.name ?? 'FIELD TEST';
+  feed(`${routeName}: passage opened. The safe-window clock is running.`, 'good');
+  pendingRoute = null;
 }
 
 function showDebrief(result) {
@@ -285,9 +289,10 @@ function deployRoute(route) {
     interlaceAtSeconds: route.interlaceAtSeconds,
   });
   state.route = structuredClone(route);
+  pendingRoute = route;
   installRun(state);
-  started = true;
-  feed(`${route.name} authorized. Two deterministic states have begun approaching each other.`, 'good');
+  started = false;
+  elements.briefing.showModal();
 }
 
 function exportMap() {
@@ -351,5 +356,5 @@ function frame(time) {
 
 mapState = await loadInitialMap();
 installRun(mapState);
-elements.briefing.showModal();
+headquarters.open();
 requestAnimationFrame(frame);
