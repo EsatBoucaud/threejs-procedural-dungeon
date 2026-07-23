@@ -1,0 +1,36 @@
+export const OPERATIVES = [
+  {
+    id: 'caio-vilar',
+    name: 'Caio Vilar',
+    mark: 'C',
+    role: 'RANGED / COMBAT MEDIC',
+    maxHealth: 110,
+    moveSpeed: 9.5,
+    color: 0x58d2c7,
+    attack: {
+      kind: 'projectile',
+      cooldown: 0.28,
+      damage: 24,
+      projectileSpeed: 24,
+      range: 23,
+    },
+    fieldTrait: 'Every third hit restores 3 health.',
+  },
+  {
+    id: 'zelia-amato',
+    name: 'Zélia Amato',
+    mark: 'Z',
+    role: 'MELEE / BREACHER',
+    maxHealth: 155,
+    moveSpeed: 8.2,
+    color: 0xe0b660,
+    attack: {
+      kind: 'melee',
+      cooldown: 0.62,
+      damage: 48,
+      radius: 3.2,
+      knockback: 7.5,
+    },
+    fieldTrait: 'Melee eliminations grant temporary damage resistance.',
+  },
+];
