@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#06080d" />
-    <meta name="description" content="ABRIR — a deterministic Three.js action-looter prototype built around generated and interlaced room states." />
+    <meta name="description" content="ABRIR — a deterministic Three.js action-looter built around generated and independently interlaced room states." />
     <title>ABRIR — Field Prototype</title>
   </head>
   <body>
@@ -136,7 +136,52 @@
             <div><span>Updated rank</span><strong id="debrief-rank">1</strong></div>
           </div>
           <p class="contract-result" id="debrief-contract">CONTRACT STATUS —</p>
-          <button id="restart-button">GENERATE ANOTHER RUN</button>
+          <button id="restart-button">RETURN TO INSTITUTO TRAVESSIA</button>
+        </div>
+      </dialog>
+
+      <dialog id="headquarters">
+        <div class="hq-shell">
+          <header class="hq-header">
+            <div>
+              <span class="eyebrow">INSTITUTO TRAVESSIA // INTERNAL ACCESS</span>
+              <h1>HEADQUARTERS</h1>
+              <p>Passages are assigned here. Ownership is revised elsewhere.</p>
+            </div>
+            <section id="hq-profile" class="hq-profile" aria-label="Field profile"></section>
+          </header>
+
+          <p id="hq-status" class="hq-status" aria-live="polite"></p>
+
+          <nav class="hq-nav" aria-label="Headquarters sections">
+            <a href="#route-board">ROUTE BOARD</a>
+            <a href="#object-archive">OBJECT ARCHIVE</a>
+            <a href="#permissions-desk">PERMISSIONS DESK</a>
+          </nav>
+
+          <section class="hq-section" id="route-board">
+            <div class="hq-section-heading">
+              <span>01</span>
+              <div><h2>ROUTE BOARD</h2><p>Each authorization generates two reproducible states and schedules their collision.</p></div>
+            </div>
+            <div id="hq-routes" class="route-grid"></div>
+          </section>
+
+          <section class="hq-section" id="object-archive">
+            <div class="hq-section-heading">
+              <span>02</span>
+              <div><h2>OBJECT ARCHIVE</h2><p>Store, sell, or buy back objects retained under the Institute’s fifteen-percent allowance.</p></div>
+            </div>
+            <div id="hq-archive" class="archive-grid"></div>
+          </section>
+
+          <section class="hq-section" id="permissions-desk">
+            <div class="hq-section-heading">
+              <span>03</span>
+              <div><h2>PERMISSIONS DESK</h2><p>Permanent upgrades are legally described as permissions so nobody has to admit the equipment changed.</p></div>
+            </div>
+            <div id="hq-upgrades" class="upgrade-grid"></div>
+          </section>
         </div>
       </dialog>
     </div>
