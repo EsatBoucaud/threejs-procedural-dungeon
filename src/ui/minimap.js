@@ -1,5 +1,6 @@
 const TYPE_COLORS = {
   entrance: '#61d7ca',
+  breach: '#d37ad5',
   combat: '#7b8390',
   archive: '#79a7e6',
   treasure: '#d5b35f',
@@ -8,13 +9,20 @@ const TYPE_COLORS = {
   vault: '#f0d495',
 };
 
+function indexRooms(rooms) {
+  return new Map(rooms.map((room) => [room.id, room]));
+}
+
 export class Minimap {
   constructor(canvas, mapState) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.mapState = mapState;
+    this.baseById = indexRooms(mapState.rooms);
+    this.remoteById = indexRooms(mapState.interlace?.rooms ?? []);
     this.currentRoomId = mapState.entranceRoomId;
     this.cleared = new Set([mapState.entranceRoomId]);
+    this.overlapsVisited = new Set();
     this.interlaced = false;
     this.resize();
     this.draw();
@@ -35,11 +43,26 @@ export class Minimap {
     this.size = size;
   }
 
-  setState({ currentRoomId, clearedRoomIds, interlaced }) {
+  setState({ currentRoomId, clearedRoomIds, interlaced, overlapsVisited }) {
     if (currentRoomId !== undefined) this.currentRoomId = currentRoomId;
     if (clearedRoomIds) this.cleared = new Set(clearedRoomIds);
     if (interlaced !== undefined) this.interlaced = interlaced;
+    if (overlapsVisited) this.overlapsVisited = new Set(overlapsVisited);
     this.draw();
+  }
+
+  drawConnection(connection, roomIndex, toPoint, style, width = 1) {
+    const a = roomIndex.get(connection.a);
+    const b = roomIndex.get(connection.b);
+    if (!a || !b) return;
+    const start = toPoint(a);
+    const end = toPoint(b);
+    this.ctx.strokeStyle = style;
+    this.ctx.lineWidth = width;
+    this.ctx.beginPath();
+    this.ctx.moveTo(start.x, start.y);
+    this.ctx.lineTo(end.x, end.y);
+    this.ctx.stroke();
   }
 
   draw() {
@@ -49,8 +72,9 @@ export class Minimap {
     ctx.fillStyle = 'rgba(4, 7, 12, 0.78)';
     ctx.fillRect(0, 0, size, size);
 
-    const xs = this.mapState.rooms.map((room) => room.x);
-    const zs = this.mapState.rooms.map((room) => room.z);
+    const allRooms = [...this.mapState.rooms, ...(this.mapState.interlace?.rooms ?? [])];
+    const xs = allRooms.map((room) => room.x);
+    const zs = allRooms.map((room) => room.z);
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minZ = Math.min(...zs);
@@ -62,45 +86,88 @@ export class Minimap {
       y: 17 + (room.z - minZ) * scale + (span - (maxZ - minZ)) * scale * 0.5,
     });
 
-    ctx.lineWidth = 1;
     for (const connection of this.mapState.connections) {
-      const a = toPoint(this.mapState.rooms[connection.a]);
-      const b = toPoint(this.mapState.rooms[connection.b]);
-      ctx.strokeStyle = connection.critical ? 'rgba(213, 182, 105, .62)' : 'rgba(130, 146, 166, .25)';
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
+      this.drawConnection(
+        connection,
+        this.baseById,
+        toPoint,
+        connection.critical ? 'rgba(213, 182, 105, .62)' : 'rgba(130, 146, 166, .25)',
+        connection.critical ? 1.25 : 1,
+      );
     }
 
     if (this.interlaced) {
-      ctx.save();
-      ctx.globalAlpha = 0.32;
-      for (const room of this.mapState.interlace.rooms) {
-        const source = this.mapState.rooms[room.sourceRoomId];
-        if (!source) continue;
-        const point = toPoint(source);
-        ctx.strokeStyle = '#cc78d3';
-        ctx.strokeRect(point.x - 4, point.y - 4, 8, 8);
+      for (const connection of this.mapState.interlace?.connections ?? []) {
+        this.drawConnection(
+          connection,
+          this.remoteById,
+          toPoint,
+          connection.critical ? 'rgba(218, 121, 220, .72)' : 'rgba(190, 112, 201, .34)',
+          connection.critical ? 1.25 : 1,
+        );
       }
-      ctx.restore();
+      ctx.setLineDash([3, 3]);
+      for (const bridge of this.mapState.interlace?.bridges ?? []) {
+        const a = this.baseById.get(bridge.a);
+        const b = this.remoteById.get(bridge.b);
+        if (!a || !b) continue;
+        const start = toPoint(a);
+        const end = toPoint(b);
+        ctx.strokeStyle = 'rgba(102, 220, 210, .78)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      for (const overlap of this.mapState.interlace?.overlaps ?? []) {
+        const point = toPoint(overlap);
+        const visited = this.overlapsVisited.has(overlap.id);
+        ctx.strokeStyle = visited ? 'rgba(244, 223, 151, .9)' : 'rgba(207, 118, 214, .4)';
+        ctx.lineWidth = visited ? 1.4 : 1;
+        ctx.strokeRect(
+          point.x - Math.max(2.5, overlap.width * scale * 0.15),
+          point.y - Math.max(2.5, overlap.depth * scale * 0.15),
+          Math.max(5, overlap.width * scale * 0.3),
+          Math.max(5, overlap.depth * scale * 0.3),
+        );
+      }
     }
 
-    for (const room of this.mapState.rooms) {
+    const drawRoom = (room, remote) => {
       const point = toPoint(room);
       const active = room.id === this.currentRoomId;
       const cleared = this.cleared.has(room.id);
       ctx.beginPath();
       ctx.arc(point.x, point.y, active ? 5.5 : room.type === 'vault' ? 4.7 : 3.3, 0, Math.PI * 2);
-      ctx.fillStyle = cleared ? TYPE_COLORS[room.type] ?? '#aab1ba' : 'rgba(65, 72, 83, .92)';
+      if (remote) {
+        ctx.fillStyle = cleared ? TYPE_COLORS[room.type] ?? '#d37ad5' : 'rgba(92, 53, 104, .85)';
+      } else {
+        ctx.fillStyle = cleared ? TYPE_COLORS[room.type] ?? '#aab1ba' : 'rgba(65, 72, 83, .92)';
+      }
       ctx.fill();
+      if (remote) {
+        ctx.strokeStyle = 'rgba(222, 142, 224, .65)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
       if (active) {
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.7;
         ctx.strokeStyle = '#fff4d0';
         ctx.stroke();
       }
+    };
+
+    for (const room of this.mapState.rooms) drawRoom(room, false);
+    if (this.interlaced) {
+      for (const room of this.mapState.interlace?.rooms ?? []) drawRoom(room, true);
     }
 
+    ctx.fillStyle = 'rgba(213, 182, 105, .72)';
+    ctx.font = '8px ui-monospace, monospace';
+    ctx.fillText(this.interlaced ? 'LOCAL + REMOTE' : 'LOCAL STATE', 8, size - 8);
     ctx.strokeStyle = 'rgba(213, 182, 105, .24)';
     ctx.strokeRect(0.5, 0.5, size - 1, size - 1);
   }
