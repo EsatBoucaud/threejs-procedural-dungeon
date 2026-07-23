@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { skinForRoute } from '../content/room-skins.js';
-import { deriveMapLayout } from '../core/room-layout.js';
+import { deriveMapLayout, pointInsideObstacle } from '../core/room-layout.js';
 import { buildInterlaceFeatures, buildPortal, buildRoomLayer } from './scene-factory.js';
 import {
   enemyMesh,
@@ -123,6 +123,13 @@ export class WorldRenderer {
     const entrance = state.rooms.find((room) => room.id === state.entranceRoomId);
     this.portalMesh = buildPortal(entrance, this.localSkin);
     this.world.add(this.portalMesh);
+  }
+
+  isPointBlocked(point, margin = 0) {
+    if (!this.layout) return false;
+    if (this.layout.local.obstacles.some((obstacle) => pointInsideObstacle(point, obstacle, margin))) return true;
+    if (!this.interlaceWorld.visible) return false;
+    return this.layout.remote.obstacles.some((obstacle) => pointInsideObstacle(point, obstacle, margin));
   }
 
   createPlayer(color, position) {
