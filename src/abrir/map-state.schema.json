@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abrir.game/schemas/map-state-v1.json",
+  "title": "ABRIR Generated Map State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "createdAt", "generator", "generated", "gameplay"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "generator": {
+      "type": "object",
+      "required": ["id", "version", "seed", "params"],
+      "properties": {
+        "id": { "const": "dungeon-forge-threejs" },
+        "version": { "type": "string", "minLength": 1 },
+        "seed": { "type": "integer", "minimum": 0 },
+        "params": { "type": "object" }
+      }
+    },
+    "generated": {
+      "type": "object",
+      "required": [
+        "name",
+        "dimensions",
+        "entranceRoomId",
+        "bossRoomId",
+        "rooms",
+        "edges",
+        "layers",
+        "markers",
+        "stats"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "dimensions": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "entranceRoomId": { "type": "integer", "minimum": 0 },
+        "bossRoomId": { "type": "integer", "minimum": 0 },
+        "maxDepth": { "type": "number", "minimum": 0 },
+        "maxBfs": { "type": "number", "minimum": 0 },
+        "rooms": { "type": "array", "minItems": 2 },
+        "edges": { "type": "array", "minItems": 1 },
+        "layers": {
+          "type": "object",
+          "required": ["grid", "roomId", "corridor", "doorway", "bfs"],
+          "properties": {
+            "grid": { "type": "array" },
+            "roomId": { "type": "array" },
+            "corridor": { "type": "array" },
+            "doorway": { "type": "array" },
+            "bfs": { "type": "array" },
+            "lakeMask": { "type": "array" }
+          }
+        },
+        "markers": {
+          "type": "object",
+          "required": ["props", "spawns", "torches", "pools", "lakeCells", "arches"],
+          "properties": {
+            "props": { "type": "array" },
+            "spawns": { "type": "array" },
+            "torches": { "type": "array" },
+            "pools": { "type": "array" },
+            "lakeCells": { "type": "array" },
+            "arches": { "type": "array" }
+          }
+        },
+        "stats": { "type": "object" }
+      }
+    },
+    "gameplay": {
+      "type": "object",
+      "required": ["encounterOverrides", "lootTables", "interlacing"],
+      "properties": {
+        "encounterOverrides": { "type": "object" },
+        "lootTables": { "type": "object" },
+        "interlacing": {
+          "type": "object",
+          "required": ["enabled", "triggerSeconds", "state"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "triggerSeconds": { "type": "number", "minimum": 0 },
+            "state": { "enum": ["dormant", "active", "resolved"] }
+          }
+        }
+      }
+    }
+  }
+}

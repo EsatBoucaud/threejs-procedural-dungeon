@@ -1,0 +1,30 @@
+{
+  "snapshotCreatedAt": "2026-07-23T17:30:00.000Z",
+  "outputFile": "content/maps/generated/abrir-mvp-seed-20260723.json",
+  "params": {
+    "seed": 20260723,
+    "roomCount": 24,
+    "loopChance": 0.18,
+    "decorDensity": 0.35,
+    "themeKey": "ancient"
+  },
+  "gameplay": {
+    "encounterOverrides": {},
+    "lootTables": {
+      "standard": "mvp-standard-salvage",
+      "elite": "mvp-elite-salvage",
+      "interlaced": "mvp-interlaced-salvage"
+    },
+    "interlacing": {
+      "enabled": true,
+      "triggerSeconds": 360,
+      "state": "dormant",
+      "enemyTierIncrease": 1,
+      "rareRoomType": "interlaced-cache"
+    },
+    "extraction": {
+      "firstOfferAfterClearedRooms": 4,
+      "failedRunRetainedValuePercent": 25
+    }
+  }
+}

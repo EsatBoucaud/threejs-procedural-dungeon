@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#030508" />
+    <meta
+      name="description"
+      content="ABRIR hidden-room object collection prototype driven by image hitbox JSON."
+    />
+    <title>ABRIR — Hidden Room Search</title>
+  </head>
+  <body>
+    <main id="search-shell">
+      <section id="brief-panel" class="chrome-panel">
+        <p class="eyebrow">HIDDEN ROOM SEARCH</p>
+        <h1 id="scene-title">Loading search scene…</h1>
+        <p>Find recoverable objects while your teammate completes their combat section.</p>
+        <h2>OBJECTIVES</h2>
+        <ul>
+          <li>Select objects before the synchronized combat window closes.</li>
+          <li>Capacity is limited; evidence may matter more than sale value.</li>
+          <li>Some personal objects carry dialogue or combat consequences.</li>
+        </ul>
+      </section>
+
+      <section id="timer-panel" class="chrome-panel" aria-live="polite">
+        <small>TIME REMAINING</small>
+        <strong id="time-remaining">00:45</strong>
+        <span id="teammate-status">Zélia · arena engagement active</span>
+      </section>
+
+      <section id="value-panel" class="chrome-panel">
+        <div>
+          <small>CAPACITY</small>
+          <strong id="capacity-copy">0 / 6</strong>
+          <i><em id="capacity-fill"></em></i>
+        </div>
+        <div>
+          <small>TOTAL VALUE</small>
+          <strong id="total-value">₵ 000</strong>
+        </div>
+      </section>
+
+      <section id="scene-panel" aria-label="Searchable room image">
+        <img id="scene-image" alt="Searchable apartment room" />
+        <div id="hitbox-layer" aria-label="Object hitboxes"></div>
+        <div id="scene-message" role="status" aria-live="polite"></div>
+      </section>
+
+      <aside id="target-panel" class="chrome-panel">
+        <h2>TARGET LIST</h2>
+        <div id="target-list"></div>
+        <section id="hint-panel">
+          <h3>HINT SYSTEM</h3>
+          <div id="hint-pips"></div>
+          <button id="use-hint" type="button">USE HINT</button>
+        </section>
+      </aside>
+
+      <section id="selected-panel" class="chrome-panel">
+        <div>
+          <h2>SELECTED ITEMS</h2>
+          <div id="selected-slots"></div>
+        </div>
+        <article id="search-guidance">
+          <strong>Select valuable objects before time expires.</strong>
+          <span>Click a highlighted object to add it. Click a selected slot to return it.</span>
+        </article>
+        <button id="finish-search" type="button">FINISH SEARCH</button>
+      </section>
+
+      <section id="morality-modal" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="morality-title">
+        <p class="eyebrow">CONSEQUENCE CHECK</p>
+        <h2 id="morality-title">Take this object?</h2>
+        <p id="morality-copy"></p>
+        <div class="modal-actions">
+          <button id="confirm-take" type="button">TAKE IT</button>
+          <button id="cancel-take" type="button">LEAVE IT</button>
+        </div>
+      </section>
+
+      <section id="dialogue-modal" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="dialogue-title">
+        <p class="eyebrow">DIALOGUE CONSEQUENCE</p>
+        <h2 id="dialogue-title">A resident confronts you.</h2>
+        <p id="dialogue-copy"></p>
+        <div id="dialogue-actions" class="modal-actions"></div>
+      </section>
+
+      <section id="outcome-panel" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="outcome-title">
+        <p class="eyebrow">SEARCH COMPLETE</p>
+        <h2 id="outcome-title">Consequences synchronized</h2>
+        <div class="outcome-grid">
+          <span>RECOVERED VALUE</span><b id="outcome-value">₵ 000</b>
+          <span>RESIDENT TRUST</span><b id="outcome-trust">0</b>
+          <span>ARENA EFFECTS</span><b id="outcome-arena">NONE</b>
+          <span>CARD UNLOCKS</span><b id="outcome-cards">NONE</b>
+          <span>DIALOGUE FACTS</span><b id="outcome-dialogue">NONE</b>
+        </div>
+        <div class="modal-actions">
+          <button id="restart-search" type="button">SEARCH AGAIN</button>
+          <a href="./game.html">RETURN TO MAP</a>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/search/main.js"></script>
+  </body>
+</html>

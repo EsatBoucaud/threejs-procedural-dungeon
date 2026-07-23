@@ -1,177 +1,107 @@
-# 🏰 Dungeon Forge
+# ABRIR
 
-### ▶ [Play the live demo](https://procedural-dungeon.netlify.app)  ·  by [@majidmanzarpour](https://x.com/majidmanzarpour)
+ABRIR is a browser-first action-looter prototype about operatives entering unstable generated rooms, fighting through local resistance, recovering objects that are supposedly “not real,” and deciding whether to extract safely or remain after night as other servers begin to interlace.
 
-**A deterministic procedural dungeon generator you can watch build itself, room by room.** Rooms
-are scattered and shoved apart, triangulated, wired into a corridor graph, carved into a tile grid,
-and dressed with theme-specific props, liquids, lights, and particles — **every stage seeded from a
-single number, so any seed rebuilds the exact same dungeon.** Rendered live with
-[Three.js](https://threejs.org/).
+This working branch is built directly on the existing deterministic Three.js procedural-dungeon project so the map generator is part of the MVP rather than a disconnected concept demo.
 
-![Dungeon Forge — a procedurally generated molten dungeon seen from above](docs/preview.jpg)
+## Current playable surfaces
 
-> Type a seed, pick a theme, drag the sliders, and watch the pipeline light up stage by stage.
-> Every forge is reproducible and every dungeon is guaranteed fully connected.
-
----
-
-## ✨ Features
-
-- **One seed, one dungeon.** A single `mulberry32` stream is threaded through *every* stage —
-  scatter, separation, triangulation, room roles, carving, decoration. The same seed always yields
-  the same map, down to the last torch. Change one digit and get an entirely new floor.
-- **A real generation pipeline, visualized.** Watch it run: **scatter → separate → Delaunay →
-  MST + loops → semantics → carve → rasterize + BFS → decorate.** Each step lights up in the HUD as
-  it happens, and you can scrub the whole build animation or skip it.
-- **Graph-based layouts.** Rooms are Delaunay-triangulated, reduced to a **minimum spanning tree**
-  for guaranteed connectivity, then selectively re-looped so the dungeon has shortcuts and cycles
-  instead of a boring spanning-tree spider.
-- **Room semantics.** A BFS from the entrance assigns depth and difficulty, then tags rooms as
-  **entrance, combat, elite, treasure, shrine, or boss** based on where they sit on the critical
-  path — so the layout reads like a real level, not just connected boxes.
-- **Five hand-tuned themes** (plus **AUTO**, which picks one from the seed): **Ancient, Molten,
-  Frost, Grim, Verdant.** Each swaps the palette, lighting rig, liquids (lava / water / miasma),
-  props, particle system (embers / snow / spores / wisps), and torch color.
-- **Procedural everything.** Stone, cracks, runes, portals, and light shafts are all generated to
-  canvas textures at load; geometry is built from primitives; nothing is loaded from disk.
-- **Instanced rendering.** Thousands of floor tiles, walls, props, and decorations are drawn with
-  `InstancedMesh`, so an 80-room dungeon with ~6,000 floor tiles still holds a high frame rate.
-- **Custom post-processing.** A hand-written pipeline — bright-pass **bloom**, separable blur,
-  **tilt-shift** focus band, cool-shadow / warm-highlight color grade, vignette, and film grain —
-  gives the whole thing its painted-miniature look. Toggle it live for an A/B.
-- **Live readouts.** Room count, links · loops, critical-path length, floor-tile count, light count,
-  generation time, draw calls, triangles, and FPS — all updating as you forge.
-- **Overlays.** Flip on the **graph overlay** to see the Delaunay edges, MST, and loops in world
-  space, or the **difficulty heatmap** to see how the danger ramps from entrance to boss.
-- **Object layers.** Toggle whole categories of the scene on and off live — **props, torches,
-  particles, liquids, lights** — without re-forging. Strip it back to bare architecture, or kill the
-  lights and watch it read by torchlight alone.
-- **Responsive & touch-ready.** The control panel collapses to a slim bar (on desktop *and* mobile)
-  so the dungeon has the whole screen, and every target is sized for a fingertip on phones/tablets.
-
----
-
-## 🎮 Controls
-
-| Action | Input |
+| Route | Purpose |
 | --- | --- |
-| Pan | drag |
-| Zoom | scroll wheel |
-| Orbit | shift-drag |
-| Reforge | `R` or **FORGE DUNGEON** |
-| Cycle theme | `T` |
-| Toggle graph overlay | `G` |
-| Toggle difficulty heatmap | `H` |
-| Toggle post FX | `P` |
-| Skip build animation | `space` |
+| `index.html` | **ABRIR Map Forge.** Generate and inspect deterministic Three.js room graphs. |
+| `game.html` | **Saved-map gameplay test.** Loads a generated JSON state into an exploratory combat/extraction runtime. |
+| `search.html` | **Hidden-room search test.** Uses authored image hitboxes for object recovery, moral choices, and synchronized consequences. |
 
-The panel (top-left) drives everything: type a **seed** (or roll the dice), pick a **theme**, and
-adjust **rooms**, **loopiness**, and **decor density**. Every change re-forges deterministically.
+The visual character art is intentionally placeholder-only. Final individual character assets will be supplied separately and wired through the asset manifest.
 
----
+## The MVP contract
 
-## 🚀 Quick start
+The generator does not need to run live during every play session. Instead, it produces a deterministic, versioned map snapshot:
+
+```text
+Three.js Map Forge
+        ↓
+content/maps/generated/*.json
+        ↓
+ABRIR gameplay runtime
+        ↓
+combat · loot · interlacing · extraction
+```
+
+A seed and parameter set can always rebuild the same map. The saved state contains the room graph, semantic room roles, rasterized navigation layers, spawn markers, decoration markers, and authored ABRIR encounter overlays.
+
+## Quick start
+
+Requires a current Node.js release compatible with Vite 8.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+npm run generate:map
+npm run dev
 ```
 
-Build a static bundle (drop `dist/` on any static host — Netlify, GitHub Pages, itch.io, a plain
-folder):
+Then open:
+
+- `http://localhost:5173/` for the map forge
+- `http://localhost:5173/game.html` for the saved-map gameplay test
+- `http://localhost:5173/search.html` for the hidden-room search test
+
+## Verification
 
 ```bash
-npm run build
-npm run preview    # serve the production build locally
+npm run check
 ```
 
-Requires Node 18+.
+That command:
 
----
+1. regenerates the canonical MVP map from the Three.js generator;
+2. validates generated map-state contracts;
+3. validates hidden-room search-scene data;
+4. builds the production bundle.
 
-## 🧠 How it works
+## Current vertical slice
 
-Every forge runs the same deterministic pipeline. Nothing is random in the "different each run"
-sense — the only entropy is the seed you give it.
+The first slice is deliberately narrow:
 
-1. **Scatter.** Room rectangles are sampled in a rough disc, sized from a distribution biased toward
-   small rooms with a few large ones.
-2. **Separate.** Overlapping rooms push each other apart over a few relaxation passes until the
-   layout is non-overlapping but still compact.
-3. **Delaunay.** Room centers are Delaunay-triangulated to get a natural, non-crossing candidate
-   graph of "which rooms could plausibly connect."
-4. **MST + loops.** A minimum spanning tree over that graph guarantees the dungeon is **fully
-   connected**; then a tunable fraction of the leftover Delaunay edges are added back as **loops**
-   for shortcuts and cycles.
-5. **Semantics.** A breadth-first search from the entrance assigns each room a depth and difficulty,
-   finds the critical path to the boss, and tags rooms as entrance / combat / elite / treasure /
-   shrine / boss.
-6. **Carve.** Rooms and their connecting corridors are stamped into a tile grid (floor / wall /
-   doorway), with L-shaped corridors and the occasional sunken liquid pit.
-7. **Rasterize + BFS.** The grid is walked to place walls, doorways, and edge trims, and to compute
-   per-tile shading (ambient occlusion from neighboring walls, moss, pool glow).
-8. **Decorate.** Props, torches, runes, portals, and a theme-appropriate particle field are
-   scattered by density; point lights are budgeted and placed at the most important rooms and
-   torches.
-9. **Render.** Everything is batched into `InstancedMesh` draw calls and composited through the
-   custom post-processing stack.
+- one deterministic generated floor;
+- Sócrates and Zélia as the initial field pair;
+- an exploratory real-time skirmish room;
+- a second tactical encounter experiment;
+- a hidden-room object-recovery scene;
+- night-pressure/interlacing state;
+- extraction versus staying late;
+- a basic recovered-value ledger with the Instituto Travessia retention cut.
 
-### Project structure
+This is not yet the full game. Online co-op, all four protagonists, final enemy kits, final art, persistent accounts, server-backed inventory, and the broader Lusophone location set remain outside the present slice.
 
-```
-dungeon-forge/
-├── index.html          # canvas mount + control/telemetry panel markup
+## Repository structure
+
+```text
+.
+├── index.html                       # Three.js map forge
+├── game.html                        # saved-map gameplay runtime
+├── search.html                      # hidden-room object search
+├── content/
+│   ├── maps/                        # generator config + committed snapshots
+│   └── search-scenes/               # hitboxes, targets, consequences
+├── docs/                            # source-of-truth project documentation
+├── scripts/                         # generation and validation scripts
 ├── src/
-│   ├── main.js         # the whole app: RNG, generator pipeline, themes,
-│   │                   #   procedural textures/geometry, instanced render,
-│   │                   #   post-processing, camera, input, HUD
-│   └── ui/
-│       └── styles.css  # panel, HUD, legend, and control styling
-├── docs/preview.jpg    # README hero
-└── public/og.jpg       # social-share image
+│   ├── abrir/                       # stable map-state boundary
+│   ├── game/                        # gameplay runtime
+│   ├── search/                      # hidden-room runtime
+│   └── main.js                      # original generator + Three.js showcase
+└── public/assets/                   # replaceable art/audio asset slots
 ```
 
-The generator and renderer live in a single self-contained `main.js` — it's one tightly-coupled
-system (shared RNG, materials, geometry caches, and render targets), so it reads best as one module.
+## Important project rules
 
----
+- GitHub is the source of truth; decisions belong in `docs/DECISIONS.md`.
+- Generated map snapshots are committed so gameplay tests remain reproducible.
+- Runtime systems consume the versioned JSON contract, not private generator internals.
+- Final character art is added as replaceable assets rather than embedded into gameplay code.
+- The backend will be wired only after the browser slice is stable; persistence must remain behind adapters.
 
-## 🎛️ The panel
+## Upstream foundation
 
-| Control | What it does |
-| --- | --- |
-| **Seed** | the number every stage is derived from; the dice button rolls a random one |
-| **Theme** | `AUTO` (seed-picked) or force **Ancient / Molten / Frost / Grim / Verdant** |
-| **Objects** | toggle **props / torches / particles / liquids / lights** on or off, live |
-| **Rooms** | how many rooms to scatter (12–80) |
-| **Loopiness** | fraction of Delaunay edges added back as loops beyond the MST |
-| **Decor density** | how heavily rooms are dressed with props and particles |
-| **Graph overlay** | draw the Delaunay edges, MST, and loops over the world |
-| **Difficulty heatmap** | tint rooms by their BFS difficulty, entrance → boss |
-| **Animate build** | play the pipeline stage-by-stage (or forge instantly) |
-| **Post FX** | toggle the bloom / tilt-shift / grade / grain stack |
-
-The panel collapses with the button in its top-right corner — on desktop and mobile alike — to hand
-the canvas back to the dungeon.
-
----
-
-## 🛠️ Built with
-
-- [Three.js](https://threejs.org/) — WebGL rendering
-- [Vite](https://vitejs.dev/) — dev server & bundler
-
-No game engine, no physics library, no asset pipeline — the geometry, textures, and post-processing
-are all generated in the browser.
-
-> **A note on the Three.js version.** This started life as a single-file prototype pinned to
-> Three.js **r128** (loaded from a CDN). It has since been migrated to the latest Three.js as an ES
-> module: the color-management API (`outputColorSpace` / color-space constants), MSAA render targets
-> (the `samples` option), and the physically-based lighting model (analytic light intensities scaled
-> to match the old legacy look) were all updated so the render matches the original pixel-for-pixel.
-
----
-
-## 📄 License
-
-[MIT](LICENSE) © 2026 [Majid Manzarpour](https://x.com/majidmanzarpour).
+The procedural generator began from **Dungeon Forge**, an MIT-licensed deterministic Three.js generator by Majid Manzarpour. ABRIR retains that license and attribution while adapting the generator into its own map-state and gameplay pipeline. See `LICENSE` and the original project history for details.

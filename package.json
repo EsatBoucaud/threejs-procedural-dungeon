@@ -1,25 +1,26 @@
 {
-  "name": "dungeon-forge",
-  "version": "1.0.0",
-  "description": "A deterministic procedural dungeon generator you can watch build itself, room by room — scatter, separate, Delaunay-triangulate, MST + loops, carve, and theme, rendered live with Three.js.",
+  "name": "abrir-mvp",
+  "version": "0.1.0",
+  "description": "ABRIR MVP built on a deterministic Three.js procedural map generator.",
   "type": "module",
-  "author": "Majid Manzarpour (https://x.com/majidmanzarpour)",
-  "homepage": "https://procedural-dungeon.netlify.app",
+  "author": "Esat Boucaud",
   "license": "MIT",
   "keywords": [
     "three.js",
     "procedural-generation",
-    "procgen",
-    "dungeon-generator",
-    "delaunay",
     "roguelike",
     "webgl",
-    "gamedev"
+    "gamedev",
+    "abrir"
   ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 4173"
+    "preview": "vite preview --port 4173",
+    "generate:map": "node scripts/generate-abrir-map.mjs",
+    "validate:maps": "node scripts/validate-map-states.mjs",
+    "validate:search": "node scripts/validate-search-scenes.mjs",
+    "check": "npm run generate:map && npm run validate:maps && npm run validate:search && npm run build"
   },
   "dependencies": {
     "three": "^0.185.0"
