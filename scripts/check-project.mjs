@@ -3,8 +3,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CHAVE_PROCESSES } from '../src/content/chave-processes.js';
 import { FIELD_ROUTES } from '../src/content/routes.js';
+import { ROUTE_SKINS } from '../src/content/room-skins.js';
 import { INSTITUTE_UPGRADES } from '../src/content/upgrades.js';
 import { validateMapState } from '../src/core/dungeon-generator.js';
+import { deriveMapLayout } from '../src/core/room-layout.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -12,13 +14,17 @@ const required = [
   'index.html',
   'src/main.js',
   'src/core/dungeon-generator.js',
+  'src/core/room-layout.js',
   'src/content/chave-processes.js',
   'src/content/contracts.js',
   'src/content/items.js',
+  'src/content/room-skins.js',
   'src/content/routes.js',
   'src/content/upgrades.js',
+  'src/render/scene-factory.js',
   'src/render/world-renderer.js',
   'src/render/entity-factory.js',
+  'src/game/navigation.js',
   'src/game/run-controller.js',
   'src/game/combat-system.js',
   'src/game/mission-system.js',
@@ -45,6 +51,10 @@ if (state.interlace.connections.length < state.interlace.rooms.length - 1) throw
 if (state.interlace.bridges.length < 1) throw new Error('At least one cross-state bridge is required.');
 if (!Array.isArray(state.interlace.overlaps)) throw new Error('Overlap list is required.');
 
+const layout = deriveMapLayout(state);
+if (layout.local.openings.size !== state.rooms.length) throw new Error('Local opening table does not cover every room.');
+if (layout.remote.openings.size !== state.interlace.rooms.length) throw new Error('Remote opening table does not cover every room.');
+
 const processIds = Object.keys(CHAVE_PROCESSES);
 const requiredProcessIds = ['auditor', 'seizure-chief', 'route-runner', 'warden'];
 for (const processId of requiredProcessIds) {
@@ -55,6 +65,8 @@ if (FIELD_ROUTES.length < 6) throw new Error('Headquarters route board requires 
 if (new Set(FIELD_ROUTES.map((route) => route.id)).size !== FIELD_ROUTES.length) throw new Error('Route IDs must be unique.');
 if (FIELD_ROUTES.some((route) => route.rewardMultiplier < 1 || route.roomCount < 10)) throw new Error('Route tuning is invalid.');
 if (FIELD_ROUTES.some((route) => !processIds.includes(route.chaveProcess))) throw new Error('Every route requires a valid Chave Geral major process.');
+if (FIELD_ROUTES.some((route) => !route.layoutProfile)) throw new Error('Every route requires a procedural architecture profile.');
+if (FIELD_ROUTES.some((route) => !ROUTE_SKINS[route.id])) throw new Error('Every route requires a procedural material skin.');
 const routeProcesses = new Set(FIELD_ROUTES.map((route) => route.chaveProcess));
 for (const processId of requiredProcessIds) {
   if (!routeProcesses.has(processId)) throw new Error(`No current route exposes ${processId}.`);
@@ -66,6 +78,8 @@ if (new Set(INSTITUTE_UPGRADES.map((upgrade) => upgrade.id)).size !== INSTITUTE_
 const mainSource = await fs.readFile(path.join(root, 'src/main.js'), 'utf8');
 const characterSource = await fs.readFile(path.join(root, 'src/content/characters.js'), 'utf8');
 const directorSource = await fs.readFile(path.join(root, 'src/game/director-system.js'), 'utf8');
+const rendererSource = await fs.readFile(path.join(root, 'src/render/world-renderer.js'), 'utf8');
+const navigationSource = await fs.readFile(path.join(root, 'src/game/navigation.js'), 'utf8');
 for (const expected of ['Sócrates', 'Zélia', 'Lia', 'Kindred']) {
   if (!characterSource.includes(expected)) throw new Error(`Missing operative identity: ${expected}.`);
 }
@@ -74,7 +88,9 @@ if (!mainSource.includes("headquarters.open()")) throw new Error('Headquarters m
 for (const expected of ['seizeHighestRecovered', 'relocateEnemy', 'extractionLocked']) {
   if (!directorSource.includes(expected)) throw new Error(`Major process behavior missing: ${expected}.`);
 }
+if (!rendererSource.includes('deriveMapLayout')) throw new Error('Renderer must consume the shared room layout.');
+if (!navigationSource.includes('deriveMapLayout')) throw new Error('Navigation must consume the shared room layout.');
 
 console.log(
-  `ABRIR project check passed. local=${state.rooms.length}/${state.connections.length} remote=${state.interlace.rooms.length}/${state.interlace.connections.length} bridges=${state.interlace.bridges.length} overlaps=${state.interlace.overlaps.length} routes=${FIELD_ROUTES.length} permissions=${INSTITUTE_UPGRADES.length} processes=${processIds.length}.`,
+  `ABRIR project check passed. local=${state.rooms.length}/${state.connections.length} remote=${state.interlace.rooms.length}/${state.interlace.connections.length} localObjects=${layout.local.obstacles.length} remoteObjects=${layout.remote.obstacles.length} bridges=${state.interlace.bridges.length} routes=${FIELD_ROUTES.length} permissions=${INSTITUTE_UPGRADES.length} processes=${processIds.length}.`,
 );

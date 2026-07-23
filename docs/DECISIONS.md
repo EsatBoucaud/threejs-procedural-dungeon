@@ -58,4 +58,20 @@ Each recovered object receives a deterministic fifteen-percent retention roll, w
 
 ## D-015 — Merge aggressively but preserve checks
 
-Large systems additions continue through scoped branches and pull requests. Pull requests may be merged rapidly after generation checks, headquarters/economy checks, repository validation, and production build all pass.
+Large systems additions continue through scoped branches and pull requests. Pull requests may be merged rapidly after generation checks, headquarters/economy checks, process checks, room-layout checks, repository validation, and production build all pass.
+
+## D-016 — Rendering and collision share one room-layout contract
+
+Wall openings, tactical obstacle placement, movement collision, enemy correction, and projectile cover derive from `src/core/room-layout.js`. A rendered prop must not silently disagree with the collision system. Final authored meshes may replace the primitive forms, but they must preserve or explicitly migrate the shared layout records.
+
+## D-017 — Corridor endpoints create physical openings
+
+Every graph connection must create an opening in each connected room. Wall construction is segmented around those openings instead of drawing uninterrupted perimeter walls over visible corridors.
+
+## D-018 — Current route palettes are implementation scaffolds
+
+The six procedural route palettes and architecture profiles exist to test system divergence, readability, and combat flow. They are not final art direction, architectural research, or cultural representation for their named locations.
+
+## D-019 — Generated architecture is working cover
+
+Tactical obstacles block movement and both friendly and hostile projectiles. Future penetration, destruction, ricochet, and material-class systems must extend this contract rather than bypassing it with renderer-only effects.

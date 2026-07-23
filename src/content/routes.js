@@ -11,6 +11,7 @@ export const FIELD_ROUTES = [
     risk: 3,
     rewardMultiplier: 1.14,
     chaveProcess: 'seizure-chief',
+    layoutProfile: 'municipal-archive',
   },
   {
     id: 'luanda-night-line',
@@ -24,6 +25,7 @@ export const FIELD_ROUTES = [
     risk: 4,
     rewardMultiplier: 1.24,
     chaveProcess: 'route-runner',
+    layoutProfile: 'transit',
   },
   {
     id: 'maputo-glass-office',
@@ -37,6 +39,7 @@ export const FIELD_ROUTES = [
     risk: 4,
     rewardMultiplier: 1.3,
     chaveProcess: 'warden',
+    layoutProfile: 'glass-office',
   },
   {
     id: 'porto-reliquary',
@@ -50,6 +53,7 @@ export const FIELD_ROUTES = [
     risk: 3,
     rewardMultiplier: 1.18,
     chaveProcess: 'auditor',
+    layoutProfile: 'reliquary',
   },
   {
     id: 'praia-weather-room',
@@ -63,6 +67,7 @@ export const FIELD_ROUTES = [
     risk: 5,
     rewardMultiplier: 1.45,
     chaveProcess: 'route-runner',
+    layoutProfile: 'weather',
   },
   {
     id: 'macau-return-desk',
@@ -76,6 +81,7 @@ export const FIELD_ROUTES = [
     risk: 5,
     rewardMultiplier: 1.5,
     chaveProcess: 'seizure-chief',
+    layoutProfile: 'customs',
   },
 ];
 

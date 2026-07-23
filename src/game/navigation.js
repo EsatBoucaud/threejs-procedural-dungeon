@@ -1,3 +1,5 @@
+import { deriveMapLayout, pointInsideObstacle } from '../core/room-layout.js';
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -34,22 +36,30 @@ function insideConnections(point, connections) {
   return false;
 }
 
+function blocked(point, obstacles, margin) {
+  return obstacles.some((obstacle) => pointInsideObstacle(point, obstacle, margin));
+}
+
 export function createWalkability(mapState, interlaceActive) {
-  return function isWalkable(point) {
-    if (mapState.rooms.some((room) => insideRoom(point, room, 0.45))) return true;
-    if (insideConnections(point, mapState.connections)) return true;
+  const layout = deriveMapLayout(mapState);
+  return function isWalkable(point, margin = 0.18) {
+    const localSurface = (
+      mapState.rooms.some((room) => insideRoom(point, room, 0.45))
+      || insideConnections(point, mapState.connections)
+    );
+    if (localSurface && !blocked(point, layout.local.obstacles, margin)) return true;
     if (!interlaceActive()) return false;
 
-    if ((mapState.interlace?.rooms ?? []).some((room) => insideRoom(point, room, 0.5))) return true;
-    if (insideConnections(point, mapState.interlace?.connections)) return true;
-    if (insideConnections(point, mapState.interlace?.bridges)) return true;
-
-    for (const overlap of mapState.interlace?.overlaps ?? []) {
-      if (
+    const remoteSurface = (
+      (mapState.interlace?.rooms ?? []).some((room) => insideRoom(point, room, 0.5))
+      || insideConnections(point, mapState.interlace?.connections)
+      || insideConnections(point, mapState.interlace?.bridges)
+      || (mapState.interlace?.overlaps ?? []).some((overlap) => (
         Math.abs(point.x - overlap.x) <= overlap.width / 2
         && Math.abs(point.z - overlap.z) <= overlap.depth / 2
-      ) return true;
-    }
-    return false;
+      ))
+    );
+    if (!remoteSurface) return false;
+    return !blocked(point, layout.remote.obstacles, margin);
   };
 }

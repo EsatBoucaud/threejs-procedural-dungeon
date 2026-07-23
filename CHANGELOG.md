@@ -1,6 +1,26 @@
 # Changelog
 
-## Unreleased — Route-specific Chave Geral processes
+## Unreleased — Tactical room architecture
+
+### Added
+
+- Shared deterministic room-layout derivation consumed by rendering and navigation.
+- Corridor-derived wall openings, segmented walls, and doorway frames.
+- Room-role floor modules and deterministic tactical obstacles.
+- Six route-specific procedural architecture profiles and material palettes.
+- Independent remote-state obstacle layouts and wall openings.
+- Projectile collision against generated cover for both operatives and hostile processes.
+- Enemy correction when a generated spawn overlaps tactical architecture.
+- Multi-route architecture determinism and bounds checks in CI.
+
+### Changed
+
+- Generated rooms are no longer floor plates enclosed by uninterrupted wall rectangles.
+- Visible obstacles and movement collision now come from the same data contract.
+- Route identity now changes temporary architecture and material behavior as well as graph and encounter parameters.
+- Procedural route palettes and architecture are explicitly classified as implementation scaffolds rather than finished cultural environment art.
+
+## 0.4.0 — Route-specific Chave Geral processes
 
 ### Added
 

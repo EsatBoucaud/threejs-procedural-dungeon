@@ -10,21 +10,28 @@ The generated room graph is not a loading-screen trick. It is the serialized lev
 
 The prototype starts and returns at a persistent headquarters interface.
 
-- Six route authorizations across the Lusophone setting, each with distinct room count, graph density, safe-window timing, risk, route payout, and assigned Chave Geral response.
+- Six route authorizations across the Lusophone setting, each with distinct room count, graph density, safe-window timing, risk, route payout, architecture profile, and assigned Chave Geral response.
 - Persistent field rank, experience, scrip, run totals, remote-object totals, and major-process statistics.
 - Object archive with appraisal, provenance, local/remote origin, condition, route identity, run seeds, and status.
 - Deterministic Instituto Travessia retention rolls capped at fifteen percent of a filing.
 - Stored-object sale and Institute-retention buyback.
 - Permanent permissions that alter cooldowns, healing, interlace timing, remote-object value, seizure protection, remote-vault rewards, and Auditor exemptions.
 
-### Generated world
+### Generated world and tactical architecture
 
 - Saved and browser-generated deterministic map states.
 - Independent local and remote room graphs with different seeds.
 - Computed cross-state overlap zones and temporary traversable bridges.
-- Three.js rooms, corridors, portals, props, lighting, critical routes, room semantics, hazards, and remote-state geometry.
+- Corridor-derived doorway openings rather than uninterrupted room walls.
+- Segmented walls, doorway frames, room-role floor modules, and deterministic tactical obstacles.
+- Route-specific procedural architecture profiles and temporary material palettes for all six current routes.
+- A single room-layout contract consumed by both rendering and navigation, keeping visible props and movement collision synchronized.
+- Working combat cover: player and hostile projectiles terminate against generated architecture.
+- Enemy spawn correction and collision margins reduce the chance of processes appearing inside cover.
 - A live minimap showing both graphs, critical paths, cleared rooms, player location, overlaps, and bridges.
 - Runtime JSON export for the current generated state, route, and field contract.
+
+The route palettes and procedural prop forms are implementation systems, not completed cultural environment art. Authored architecture, material research, signage, objects, sound, and environmental storytelling remain future location work.
 
 ### Four-operative squad
 
@@ -51,6 +58,7 @@ The current procedural silhouettes are combat-readable placeholders, not final a
 - Ranged projectiles, melee area attacks, pierce, knockback, stagger, weakening, healing, damage resistance, phase movement, and squad fallback.
 - Pursuer and gunner enemy processes with melee and ranged behavior.
 - Route-specific major encounters with separate health, movement, attacks, spawn conditions, and mission consequences.
+- Tactical architecture that blocks movement and both friendly and hostile projectiles.
 - A threat director that escalates pressure based on elapsed time, recovered value, interlace status, remote recovery, and map attention.
 - Dynamic hostile waves routed through either generated graph.
 - Deterministic environmental anomalies that damage and slow the squad.
@@ -86,6 +94,7 @@ npm run generate:map
 npm run check:generation
 npm run check:headquarters
 npm run check:processes
+npm run check:layout
 npm run check
 npm run dev
 ```
@@ -105,19 +114,19 @@ npm run preview
 
 ## Current architecture
 
-The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. Gameplay derives contracts, hazards, enemy pressure, assigned major processes, shrine permissions, loot provenance, archive records, and progression from those deterministic states.
+The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. A shared layout pass derives wall openings, route-profile tactical obstacles, and collision bounds. Gameplay then derives contracts, hazards, enemy pressure, assigned major processes, shrine permissions, loot provenance, archive records, and progression from those deterministic states.
 
 The browser can load a committed state, generate a replacement, or export the state it is currently running. A future backend only needs to store and distribute map contracts, profiles, archives, inventories, and signed run results; it does not need to recreate the renderer.
 
 ```text
-src/core/       seeded local/remote generation and map validation
+src/core/       seeded local/remote generation, room architecture, and map validation
 src/content/    operatives, routes, Chave processes, contracts, upgrades, items, room skins
 src/game/       combat, mission, hazards, director, archive, progression, navigation
-src/render/     Three.js world and entity construction
+src/render/     Three.js world, architecture, and entity construction
 src/ui/         tactical HUD, minimap, major-process states, and headquarters
 public/maps/    committed reproducible map states
 public/assets/  temporary UI marks and future authored assets
-scripts/        generation, headquarters, process, and repository checks
+scripts/        generation, headquarters, process, layout, and repository checks
 ```
 
 See:
@@ -133,4 +142,4 @@ See:
 
 ## Provenance
 
-This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, and a headquarters economy.
+This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, tactical architecture, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, and a headquarters economy.
