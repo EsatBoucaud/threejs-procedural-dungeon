@@ -1,9 +1,9 @@
 {
   "name": "abrir-game-prototype",
   "private": true,
-  "version": "0.10.0",
+  "version": "0.11.0",
   "type": "module",
-  "description": "ABRIR — deterministic multiplayer Three.js action-looter with shared interactions, deliberate interlace risk, and collectible comic infrastructure.",
+  "description": "ABRIR — deterministic multiplayer Three.js action-looter with action-driven onboarding, shared interactions, deliberate interlace risk, and collectible comic infrastructure.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
@@ -18,6 +18,7 @@
     "check:shared-interactions": "node scripts/check-shared-interactions.mjs",
     "check:comic-reader": "node scripts/check-comic-reader.mjs",
     "check:safe-window": "node scripts/check-safe-window.mjs",
+    "check:tutorial": "node scripts/check-tutorial.mjs",
     "generate:map": "node scripts/generate-map.mjs"
   },
   "dependencies": {
