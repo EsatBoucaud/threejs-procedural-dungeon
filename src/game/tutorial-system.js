@@ -79,7 +79,7 @@ export class TutorialSystem {
       this.history.push({ sequence: ++this.sequence, event: 'task', task: 'threshold', roomId });
       this.transition('inspect', 'orientation-room-entered');
     }
-    if (roomId === this.plan.combatRoomId && this.tasks.inspect && !this.tasks.combatEntered) {
+    if (roomId === this.plan.combatRoomId && this.tasks.ownership && !this.tasks.combatEntered) {
       this.tasks.combatEntered = true;
       this.combatEnteredAt = elapsedSeconds;
       this.history.push({ sequence: ++this.sequence, event: 'task', task: 'combatEntered', roomId });
