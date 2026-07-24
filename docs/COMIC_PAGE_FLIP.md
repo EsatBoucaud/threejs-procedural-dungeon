@@ -4,7 +4,9 @@ Status: implemented frontend mechanic
 
 ## Purpose
 
-ABRIR now has a reusable two-page comic spread that can sit over live field play. The mechanic is intended for authored story sequences, recovered-object histories, dialogue evidence, route memories, and other comic material that should be read as a spread rather than as a modal list.
+ABRIR has a reusable two-page comic spread for collectible backstory comics. Players recover individual comic pages during progression; completing the required page set unlocks a full comic tied to a character's origin, history, relationships, or progression arc.
+
+The comic reader is not intended to interrupt ordinary object decisions, dialogue, combat, or run consequences. It is dormant presentation infrastructure for image-based collectible comics that will be authored separately.
 
 This is deliberately not the full Atlas interface. It does not import the Compass, workbook, assessment layer, audio controls, annotations, bookshelf, or reading-platform navigation.
 
@@ -25,13 +27,13 @@ Atlas uses `react-pageflip`, which wraps `page-flip`. ABRIR is framework-light, 
 
 ## Runtime API
 
-`ComicReader.open(pages, options)` accepts an array of page records. Pages may contain either trusted HTML or an image URL.
+`ComicReader.open(pages, options)` accepts an array of page records. Final collectible comics are expected to use image records.
 
 ```js
 comicReader.open([
   { id: 'page-1', type: 'image', imageUrl: '/comic/001.webp', alt: 'Page one' },
   { id: 'page-2', type: 'image', imageUrl: '/comic/002.webp', alt: 'Page two' },
-], { title: 'Recovered Testimony', startPage: 0 });
+], { title: 'Recovered Origin Comic', startPage: 0 });
 ```
 
 The reader exposes:
@@ -53,10 +55,22 @@ window.addEventListener('comicPageFlip', (event) => {
 
 ## Current prototype access
 
-During a live run, press `C` to open a six-page deterministic field-comic sample. Use the arrow keys or edge controls to flip full spreads. Press Escape to close it.
+During a live run, press `C` to open a six-page deterministic mechanics sample. Use the arrow keys or edge controls to flip full spreads. Press Escape to close it.
 
-The sample pages are implementation placeholders only. They are not final comic art or positive reference material.
+The sample is a temporary developer entry point only. It is not the intended final trigger, final comic content, or positive art reference.
 
-## Next player-facing use
+## Future progression integration
 
-The next implementation should replace the sample-only entry point with authored comic packets attached to specific gameplay events. The strongest first use is a short comic consequence after a major object decision: the spread can show what the Institute records on one page and what the affected people remember on the other.
+The future collectible layer should track:
+
+- comic series ID;
+- character or origin arc;
+- required page count;
+- recovered page indices;
+- duplicate-page handling;
+- completion state;
+- unlocked full-comic image manifest;
+- progression prerequisite or milestone;
+- headquarters archive placement.
+
+The reader should open only after the required page set or progression condition is complete. The actual comic pages will be supplied as authored images, so no additional procedural comic-content system is required.
