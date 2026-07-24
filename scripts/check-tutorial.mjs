@@ -40,6 +40,9 @@ assert.equal(twoPlayer.snapshot().tasks.threshold, true);
 assert.equal(twoPlayer.inspectOrientation({ playerId: 'player-1', characterId: 'zelia-amato' }).success, true);
 assert.equal(twoPlayer.snapshot().phase, 'ownership');
 assert.equal(twoPlayer.recordAction('attack').success, false, 'Combat actions should not count before the combat lesson.');
+twoPlayer.enterRoom(plan.combatRoomId, 10);
+assert.equal(twoPlayer.snapshot().phase, 'ownership', 'Physically reaching combat must not bypass the 2P ownership lesson.');
+assert.equal(twoPlayer.snapshot().tasks.combatEntered, false);
 assert.equal(twoPlayer.recordAction('swap', { characterId: 'socrates' }).success, true);
 assert.equal(twoPlayer.snapshot().phase, 'combat-route');
 assert.equal(twoPlayer.snapshot().currentTargetRoomId, plan.combatRoomId);
@@ -81,4 +84,4 @@ assert.equal(fourPlayer.snapshot().completed, true);
 assert.equal(fourPlayer.snapshot().tasks.cover, true);
 assert.ok(fourPlayer.snapshot().history.some((entry) => entry.event === 'tutorial-complete' && entry.coverObserved));
 
-console.log('Tutorial check passed: critical-path planning, stable inspection, 2P scoped swap, 4P fixed ownership, live actions, optional cover observation, and completion.');
+console.log('Tutorial check passed: critical-path planning, stable inspection, 2P ownership gate, scoped swap, 4P fixed ownership, live actions, optional cover observation, and completion.');
