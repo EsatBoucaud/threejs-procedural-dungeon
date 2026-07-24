@@ -127,7 +127,13 @@ export class TutorialSystem {
   }
 
   clearRoom(roomId) {
-    if (!this.started || this.completed || roomId !== this.plan.combatRoomId || this.tasks.roomClear) {
+    if (
+      !this.started
+      || this.completed
+      || !this.tasks.combatEntered
+      || roomId !== this.plan.combatRoomId
+      || this.tasks.roomClear
+    ) {
       return { success: false, snapshot: this.snapshot() };
     }
     this.tasks.roomClear = true;
