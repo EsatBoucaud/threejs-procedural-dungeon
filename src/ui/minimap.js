@@ -65,6 +65,37 @@ export class Minimap {
     this.ctx.stroke();
   }
 
+  drawForecastMarkers(toPoint) {
+    if (!this.interlaced) return;
+    const forecast = this.mapState.safeWindowForecast;
+    if (!forecast) return;
+    const opportunityRoom = this.remoteById.get(forecast.opportunity?.roomId);
+    if (opportunityRoom) {
+      const point = toPoint(opportunityRoom);
+      this.ctx.beginPath();
+      this.ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+      this.ctx.strokeStyle = 'rgba(244, 213, 125, .98)';
+      this.ctx.lineWidth = 2;
+      this.ctx.stroke();
+      this.ctx.fillStyle = '#f4d57d';
+      this.ctx.font = 'bold 8px ui-monospace, monospace';
+      this.ctx.fillText('O', point.x - 2.5, point.y + 2.8);
+    }
+
+    const danger = forecast.danger?.position;
+    if (danger && Number.isFinite(danger.x) && Number.isFinite(danger.z)) {
+      const point = toPoint(danger);
+      this.ctx.strokeStyle = 'rgba(232, 102, 82, .98)';
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(point.x - 5, point.y - 5);
+      this.ctx.lineTo(point.x + 5, point.y + 5);
+      this.ctx.moveTo(point.x + 5, point.y - 5);
+      this.ctx.lineTo(point.x - 5, point.y + 5);
+      this.ctx.stroke();
+    }
+  }
+
   draw() {
     const ctx = this.ctx;
     const size = this.size;
@@ -163,11 +194,12 @@ export class Minimap {
     for (const room of this.mapState.rooms) drawRoom(room, false);
     if (this.interlaced) {
       for (const room of this.mapState.interlace?.rooms ?? []) drawRoom(room, true);
+      this.drawForecastMarkers(toPoint);
     }
 
     ctx.fillStyle = 'rgba(213, 182, 105, .72)';
     ctx.font = '8px ui-monospace, monospace';
-    ctx.fillText(this.interlaced ? 'LOCAL + REMOTE' : 'LOCAL STATE', 8, size - 8);
+    ctx.fillText(this.interlaced ? 'LOCAL + REMOTE // O OPPORTUNITY / × DANGER' : 'LOCAL STATE', 8, size - 8);
     ctx.strokeStyle = 'rgba(213, 182, 105, .24)';
     ctx.strokeRect(0.5, 0.5, size - 1, size - 1);
   }

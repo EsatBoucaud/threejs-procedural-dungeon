@@ -77,36 +77,51 @@ Acceptance test: an all-ranged or all-melee four-character composition passes va
 
 ## Priority 6 — Object meaning and collective decisions
 
-- [ ] Object panel shows Institute appraisal.
-- [ ] Object panel shows network relevance to Celeste or A Chave Geral.
-- [ ] Object panel shows local human meaning or claim.
-- [ ] Actions include recover, inspect, leave, and mark for return.
-- [ ] Ordinary collection does not require a vote.
-- [ ] Consequential object choices can trigger agree, oppose, or abstain responses.
-- [ ] Unresolved disagreement can use a visible, modified die roll.
-- [ ] Record the disagreement and later character reactions.
+- [x] Object panel shows Institute appraisal.
+- [x] Object panel shows network relevance to Celeste or A Chave Geral.
+- [x] Object panel shows local human meaning or claim.
+- [x] Actions include recover, inspect, leave, mark for return, and contest classification.
+- [x] Ordinary collection does not require a vote.
+- [x] Consequential object choices can trigger agree, oppose, or abstain responses.
+- [x] Unresolved disagreement can use a visible, modified die roll.
+- [x] Record the disagreement, initiator, votes, roll, and outcome in activity history.
+- [ ] Add later character and relationship reactions to recorded object decisions.
 
 ## Priority 7 — Safe-window and interlace choice
 
-- [ ] Add an early warning before the final countdown.
-- [ ] Keep the return route physically available while the team decides.
-- [ ] Early extraction counts as a successful run.
-- [ ] Staying late visibly opens the interlace branch.
-- [ ] Interlace immediately creates one readable opportunity and one readable danger.
-- [ ] Composition consequences remain readable after visual disruption.
+- [x] Add an early warning before the final countdown.
+- [x] Keep the return route physically available while the team decides.
+- [x] Early extraction counts as a successful run.
+- [x] Staying late visibly opens the interlace branch and records the choice as stayed.
+- [x] Interlace immediately creates one readable opportunity and one readable danger.
+- [x] Mark the forecast opportunity and danger on the interlaced minimap.
+- [x] Route an immediate hostile vanguard through the forecast danger coordinate.
+- [ ] Keep kit composition and teammate status readable during the interlace visual disruption.
 
 ## Priority 8 — Debrief and redeployment
 
-- [ ] Field-result layer.
-- [ ] Institute-accounting layer.
-- [ ] Object-record layer.
+- [x] Basic field-result layer.
+- [x] Basic Institute-accounting layer.
+- [x] Basic object-record layer through the archive.
+- [x] Record whether the team returned during the safe window or stayed for interlace.
 - [ ] Narrative-contradiction layer.
 - [ ] First archive decision: sell, keep, dispute, or mark for return.
 - [ ] Primary action after filing: authorize another passage.
 
+## Collectible backstory comics — later progression layer
+
+- [x] Reusable two-page image reader and page-turn mechanic.
+- [ ] Define comic series tied to character origins and progression arcs.
+- [ ] Drop collectible page fragments through gameplay rewards.
+- [ ] Track recovered indices and duplicate handling.
+- [ ] Unlock a complete authored image comic when its page requirement is met.
+- [ ] Place unlocked comics in the headquarters archive.
+
+The comic reader should not interrupt ordinary dialogue, object decisions, combat, or run consequences.
+
 ## Current implementation boundary
 
-The current branch implements the deployment contract, player ownership data, unrestricted kit composition, local-client roster resolution, and deployment UI. It does **not** yet implement networked two-player or four-player simulation. That work begins at Priority 3 and Priority 4.
+The current build implements deployment ownership, unrestricted kit composition, shared player-led interactions, object interpretation and voting, and the safe-window return-versus-interlace choice. It still simulates one locally controlled entity and does not yet provide networked two-player or four-player field presence.
 
 ## Do not expand before completion
 

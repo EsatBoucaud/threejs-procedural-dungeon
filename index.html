@@ -87,6 +87,7 @@
         <div><i id="boss-health-fill"></i></div>
       </section>
 
+      <section id="safe-window-panel" aria-live="assertive" aria-label="Safe-window return and interlace forecast"></section>
       <aside id="event-feed" aria-label="Mission event feed"></aside>
       <div id="interaction-hint" aria-live="polite"></div>
       <div id="crosshair"></div>
@@ -123,7 +124,7 @@
             <article><b>1.</b><span>Choose two-player or four-player ownership before the passage opens.</span></article>
             <article><b>2.</b><span>Assign every character once, then select any combat kit for each character.</span></article>
             <article><b>3.</b><span>No field activity is reserved by combat kit, character, or player seat.</span></article>
-            <article><b>4.</b><span>Shared interactions support handoff, participation, visible proposals, opposition, abstention, and decision rolls.</span></article>
+            <article><b>4.</b><span>The return passage stays open during the safe window. Staying past zero deliberately opens the remote branch.</span></article>
           </div>
           <button id="begin-button" autofocus>CONFIRM DEPLOYMENT AND OPEN PASSAGE</button>
           <button id="export-button" class="secondary">EXPORT CURRENT MAP STATE</button>
@@ -143,6 +144,7 @@
             <div><span>Updated rank</span><strong id="debrief-rank">1</strong></div>
           </div>
           <p class="contract-result" id="debrief-contract">CONTRACT STATUS —</p>
+          <p class="window-result" id="debrief-window">SAFE-WINDOW DECISION —</p>
           <button id="restart-button">RETURN TO INSTITUTO TRAVESSIA</button>
         </div>
       </dialog>
@@ -192,6 +194,7 @@
         </div>
       </dialog>
     </div>
+    <script type="module" src="/src/ui/safe-window-bootstrap.js"></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

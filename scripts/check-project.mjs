@@ -20,6 +20,7 @@ const required = [
   'src/content/combat-kits.js',
   'src/content/contracts.js',
   'src/content/field-comic.js',
+  'src/content/interlace-forecast.js',
   'src/content/interaction-content.js',
   'src/content/items.js',
   'src/content/room-skins.js',
@@ -33,6 +34,8 @@ const required = [
   'src/game/interactive-run-controller.js',
   'src/game/shared-interaction-system.js',
   'src/game/comic-page-state.js',
+  'src/game/safe-window-system.js',
+  'src/game/safe-window-runtime.js',
   'src/game/combat-system.js',
   'src/game/mission-system.js',
   'src/game/director-system.js',
@@ -50,6 +53,8 @@ const required = [
   'src/ui/shared-interactions.css',
   'src/ui/comic-reader.js',
   'src/ui/comic-reader.css',
+  'src/ui/safe-window-bootstrap.js',
+  'src/ui/safe-window.css',
   'docs/PLAYER_ACTIVITY_AUTHORITY.md',
   'docs/COMIC_PAGE_FLIP.md',
   'public/assets/ui/instituto-travessia-seal.svg',
@@ -100,10 +105,14 @@ const activitySource = await fs.readFile(path.join(root, 'src/game/activity-auth
 const sharedSource = await fs.readFile(path.join(root, 'src/game/shared-interaction-system.js'), 'utf8');
 const comicStateSource = await fs.readFile(path.join(root, 'src/game/comic-page-state.js'), 'utf8');
 const comicReaderSource = await fs.readFile(path.join(root, 'src/ui/comic-reader.js'), 'utf8');
+const safeWindowSource = await fs.readFile(path.join(root, 'src/game/safe-window-system.js'), 'utf8');
+const safeRuntimeSource = await fs.readFile(path.join(root, 'src/game/safe-window-runtime.js'), 'utf8');
+const safeUiSource = await fs.readFile(path.join(root, 'src/ui/safe-window-bootstrap.js'), 'utf8');
 const missionSource = await fs.readFile(path.join(root, 'src/game/mission-system.js'), 'utf8');
 const directorSource = await fs.readFile(path.join(root, 'src/game/director-system.js'), 'utf8');
 const rendererSource = await fs.readFile(path.join(root, 'src/render/world-renderer.js'), 'utf8');
 const navigationSource = await fs.readFile(path.join(root, 'src/game/navigation.js'), 'utf8');
+const minimapSource = await fs.readFile(path.join(root, 'src/ui/minimap.js'), 'utf8');
 for (const expected of ['Sócrates', 'Zélia', 'Lia', 'Chilindo']) {
   if (!characterSource.includes(expected)) throw new Error(`Missing field character identity: ${expected}.`);
 }
@@ -117,6 +126,8 @@ if (!mainSource.includes('InteractiveRunController')) throw new Error('Live runs
 if (!mainSource.includes('ComicReader')) throw new Error('The two-page comic reader must remain wired into live play.');
 if (!mainSource.includes('createFieldComic')) throw new Error('Live play must expose a deterministic comic packet.');
 if (!indexSource.includes('comic-reader-root')) throw new Error('The comic reader mount is missing from the application shell.');
+if (!indexSource.includes('safe-window-bootstrap.js')) throw new Error('The safe-window runtime must load before the main game module.');
+if (!indexSource.includes('safe-window-panel')) throw new Error('The safe-window forecast mount is missing.');
 for (const expected of ['two-player', 'four-player', 'compositionRule']) {
   if (!deploymentSource.includes(expected)) throw new Error(`Deployment contract missing: ${expected}.`);
 }
@@ -132,6 +143,16 @@ for (const expected of ['currentPage', 'next()', 'previous()', 'spread(offset'])
 for (const expected of ['ArrowRight', 'ArrowLeft', 'comicPageFlip', 'flip-forward', 'flip-backward']) {
   if (!comicReaderSource.includes(expected)) throw new Error(`Comic reader behavior missing: ${expected}.`);
 }
+for (const expected of ['warning', 'final', 'markReturned', 'markStayed', 'decision']) {
+  if (!safeWindowSource.includes(expected)) throw new Error(`Safe-window state missing: ${expected}.`);
+}
+for (const expected of ['spawnInterlaceVanguard', 'attemptExtraction', 'triggerInterlace', 'abrir:run-finished']) {
+  if (!safeRuntimeSource.includes(expected)) throw new Error(`Safe-window runtime missing: ${expected}.`);
+}
+for (const expected of ['RETURN', 'STAY', 'DANGER', 'abrir:safe-window']) {
+  if (!safeUiSource.includes(expected)) throw new Error(`Safe-window UI missing: ${expected}.`);
+}
+if (!minimapSource.includes('drawForecastMarkers')) throw new Error('Interlace opportunity and danger markers must remain visible on the minimap.');
 if (!missionSource.includes('ActivityAuthority')) throw new Error('Mission interactions must route through activity authority.');
 if (!missionSource.includes('recoveredByPlayerId')) throw new Error('Recovered objects must remember the acting player.');
 if (!missionSource.includes('resolveObjectDecision')) throw new Error('Object outcomes must be resolved after the visible shared decision.');
