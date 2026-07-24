@@ -36,6 +36,8 @@ const required = [
   'src/game/comic-page-state.js',
   'src/game/safe-window-system.js',
   'src/game/safe-window-runtime.js',
+  'src/game/tutorial-system.js',
+  'src/game/tutorial-runtime.js',
   'src/game/combat-system.js',
   'src/game/mission-system.js',
   'src/game/director-system.js',
@@ -55,8 +57,12 @@ const required = [
   'src/ui/comic-reader.css',
   'src/ui/safe-window-bootstrap.js',
   'src/ui/safe-window.css',
+  'src/ui/tutorial-bootstrap.js',
+  'src/ui/tutorial-guide.css',
   'docs/PLAYER_ACTIVITY_AUTHORITY.md',
+  'docs/SAFE_WINDOW_CHOICE.md',
   'docs/COMIC_PAGE_FLIP.md',
+  'docs/FIRST_RUN_TUTORIAL.md',
   'public/assets/ui/instituto-travessia-seal.svg',
   'public/assets/ui/chave-geral-audit-mark.svg',
   'public/maps/abrir-001.json',
@@ -108,6 +114,9 @@ const comicReaderSource = await fs.readFile(path.join(root, 'src/ui/comic-reader
 const safeWindowSource = await fs.readFile(path.join(root, 'src/game/safe-window-system.js'), 'utf8');
 const safeRuntimeSource = await fs.readFile(path.join(root, 'src/game/safe-window-runtime.js'), 'utf8');
 const safeUiSource = await fs.readFile(path.join(root, 'src/ui/safe-window-bootstrap.js'), 'utf8');
+const tutorialSource = await fs.readFile(path.join(root, 'src/game/tutorial-system.js'), 'utf8');
+const tutorialRuntimeSource = await fs.readFile(path.join(root, 'src/game/tutorial-runtime.js'), 'utf8');
+const tutorialUiSource = await fs.readFile(path.join(root, 'src/ui/tutorial-bootstrap.js'), 'utf8');
 const missionSource = await fs.readFile(path.join(root, 'src/game/mission-system.js'), 'utf8');
 const directorSource = await fs.readFile(path.join(root, 'src/game/director-system.js'), 'utf8');
 const rendererSource = await fs.readFile(path.join(root, 'src/render/world-renderer.js'), 'utf8');
@@ -128,6 +137,8 @@ if (!mainSource.includes('createFieldComic')) throw new Error('Live play must ex
 if (!indexSource.includes('comic-reader-root')) throw new Error('The comic reader mount is missing from the application shell.');
 if (!indexSource.includes('safe-window-bootstrap.js')) throw new Error('The safe-window runtime must load before the main game module.');
 if (!indexSource.includes('safe-window-panel')) throw new Error('The safe-window forecast mount is missing.');
+if (!indexSource.includes('tutorial-bootstrap.js')) throw new Error('The first-run tutorial runtime must load before the main game module.');
+if (!indexSource.includes('tutorial-guide')) throw new Error('The field-orientation guide mount is missing.');
 for (const expected of ['two-player', 'four-player', 'compositionRule']) {
   if (!deploymentSource.includes(expected)) throw new Error(`Deployment contract missing: ${expected}.`);
 }
@@ -152,7 +163,17 @@ for (const expected of ['spawnInterlaceVanguard', 'attemptExtraction', 'triggerI
 for (const expected of ['RETURN', 'STAY', 'DANGER', 'abrir:safe-window']) {
   if (!safeUiSource.includes(expected)) throw new Error(`Safe-window UI missing: ${expected}.`);
 }
+for (const expected of ['threshold', 'inspect', 'ownership', 'combat-route', 'attack', 'dodge', 'ability', 'cover', 'roomClear']) {
+  if (!tutorialSource.includes(expected)) throw new Error(`First-run tutorial state missing: ${expected}.`);
+}
+for (const expected of ['spawnBaseEnemies', 'tutorialCoverTarget', 'attemptTutorialInteraction', 'firstRunTutorialComplete']) {
+  if (!tutorialRuntimeSource.includes(expected)) throw new Error(`First-run tutorial runtime missing: ${expected}.`);
+}
+for (const expected of ['CROSS THE THRESHOLD', 'SWAP WITHIN YOUR PAIR', 'LIVE COMBAT', 'TEAMMATE']) {
+  if (!tutorialUiSource.includes(expected)) throw new Error(`First-run tutorial UI missing: ${expected}.`);
+}
 if (!minimapSource.includes('drawForecastMarkers')) throw new Error('Interlace opportunity and danger markers must remain visible on the minimap.');
+if (!minimapSource.includes('drawTutorialMarker')) throw new Error('Generated tutorial targets must remain visible on the minimap.');
 if (!missionSource.includes('ActivityAuthority')) throw new Error('Mission interactions must route through activity authority.');
 if (!missionSource.includes('recoveredByPlayerId')) throw new Error('Recovered objects must remember the acting player.');
 if (!missionSource.includes('resolveObjectDecision')) throw new Error('Object outcomes must be resolved after the visible shared decision.');
