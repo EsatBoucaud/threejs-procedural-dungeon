@@ -19,6 +19,7 @@ const required = [
   'src/content/characters.js',
   'src/content/combat-kits.js',
   'src/content/contracts.js',
+  'src/content/field-comic.js',
   'src/content/interaction-content.js',
   'src/content/items.js',
   'src/content/room-skins.js',
@@ -31,6 +32,7 @@ const required = [
   'src/game/run-controller.js',
   'src/game/interactive-run-controller.js',
   'src/game/shared-interaction-system.js',
+  'src/game/comic-page-state.js',
   'src/game/combat-system.js',
   'src/game/mission-system.js',
   'src/game/director-system.js',
@@ -46,7 +48,10 @@ const required = [
   'src/ui/deployment-builder.css',
   'src/ui/shared-interactions.js',
   'src/ui/shared-interactions.css',
+  'src/ui/comic-reader.js',
+  'src/ui/comic-reader.css',
   'docs/PLAYER_ACTIVITY_AUTHORITY.md',
+  'docs/COMIC_PAGE_FLIP.md',
   'public/assets/ui/instituto-travessia-seal.svg',
   'public/assets/ui/chave-geral-audit-mark.svg',
   'public/maps/abrir-001.json',
@@ -87,11 +92,14 @@ for (const processId of requiredProcessIds) {
 if (INSTITUTE_UPGRADES.length < 7) throw new Error('Permissions desk requires at least seven upgrades.');
 if (new Set(INSTITUTE_UPGRADES.map((upgrade) => upgrade.id)).size !== INSTITUTE_UPGRADES.length) throw new Error('Upgrade IDs must be unique.');
 
+const indexSource = await fs.readFile(path.join(root, 'index.html'), 'utf8');
 const mainSource = await fs.readFile(path.join(root, 'src/main.js'), 'utf8');
 const characterSource = await fs.readFile(path.join(root, 'src/content/characters.js'), 'utf8');
 const deploymentSource = await fs.readFile(path.join(root, 'src/game/deployment-system.js'), 'utf8');
 const activitySource = await fs.readFile(path.join(root, 'src/game/activity-authority.js'), 'utf8');
 const sharedSource = await fs.readFile(path.join(root, 'src/game/shared-interaction-system.js'), 'utf8');
+const comicStateSource = await fs.readFile(path.join(root, 'src/game/comic-page-state.js'), 'utf8');
+const comicReaderSource = await fs.readFile(path.join(root, 'src/ui/comic-reader.js'), 'utf8');
 const missionSource = await fs.readFile(path.join(root, 'src/game/mission-system.js'), 'utf8');
 const directorSource = await fs.readFile(path.join(root, 'src/game/director-system.js'), 'utf8');
 const rendererSource = await fs.readFile(path.join(root, 'src/render/world-renderer.js'), 'utf8');
@@ -106,6 +114,9 @@ if (!mainSource.includes('headquarters.open()')) throw new Error('Headquarters m
 if (!mainSource.includes('DeploymentBuilder')) throw new Error('Multiplayer deployment builder must remain wired into startup.');
 if (!mainSource.includes('SharedInteractionPanel')) throw new Error('Shared interaction panel must remain wired into live play.');
 if (!mainSource.includes('InteractiveRunController')) throw new Error('Live runs must use the interaction-aware controller.');
+if (!mainSource.includes('ComicReader')) throw new Error('The two-page comic reader must remain wired into live play.');
+if (!mainSource.includes('createFieldComic')) throw new Error('Live play must expose a deterministic comic packet.');
+if (!indexSource.includes('comic-reader-root')) throw new Error('The comic reader mount is missing from the application shell.');
 for (const expected of ['two-player', 'four-player', 'compositionRule']) {
   if (!deploymentSource.includes(expected)) throw new Error(`Deployment contract missing: ${expected}.`);
 }
@@ -114,6 +125,12 @@ for (const expected of ['loot', 'talk', 'card-battle', 'route', 'extract']) {
 }
 for (const expected of ['openDialogue', 'openObjectDecision', 'openCardBattle', 'requestHandoff', 'castVote', 'deterministicRoll']) {
   if (!sharedSource.includes(expected)) throw new Error(`Shared interaction behavior missing: ${expected}.`);
+}
+for (const expected of ['currentPage', 'next()', 'previous()', 'spread(offset']) {
+  if (!comicStateSource.includes(expected)) throw new Error(`Comic spread state missing: ${expected}.`);
+}
+for (const expected of ['ArrowRight', 'ArrowLeft', 'comicPageFlip', 'flip-forward', 'flip-backward']) {
+  if (!comicReaderSource.includes(expected)) throw new Error(`Comic reader behavior missing: ${expected}.`);
 }
 if (!missionSource.includes('ActivityAuthority')) throw new Error('Mission interactions must route through activity authority.');
 if (!missionSource.includes('recoveredByPlayerId')) throw new Error('Recovered objects must remember the acting player.');
