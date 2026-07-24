@@ -84,6 +84,7 @@ export class FirstRunTutorialRuntime {
     this.lastRoomId = null;
     this.lastSnapshotKey = '';
     this.destroyed = false;
+    this.completionEmitted = false;
     this.coverWrapper = null;
     this.originalBlocked = null;
     tutorialByCombat.set(controller.combat, this);
@@ -185,8 +186,12 @@ export class FirstRunTutorialRuntime {
   }
 
   update(delta) {
-    if (this.destroyed || this.system.completed) {
-      this.emit('completed');
+    if (this.destroyed) return;
+    if (this.system.completed) {
+      if (!this.completionEmitted) {
+        this.completionEmitted = true;
+        this.emit('completed');
+      }
       return;
     }
 
