@@ -30,7 +30,21 @@ Any eligible player may initiate dialogue, inspect or recover objects, negotiate
 
 The browser prototype can switch local perspective between players to exercise the workflow without claiming completed online replication.
 
-### Two-page comic reader
+### Safe-window return versus interlace
+
+The safe window is now a player-facing risk decision rather than a passive countdown.
+
+- Afonso warns the team before the final countdown.
+- The entrance remains physically available for a successful early extraction.
+- Remaining in the field past zero records the team as having chosen to stay.
+- The warning identifies one remote opportunity and the assigned Chave Geral danger.
+- When interlace begins, the opportunity receives a gold minimap marker and the danger receives a red coordinate marker.
+- An immediate hostile vanguard enters through the danger coordinate while the full major process retains its existing activation condition.
+- The final result records `returned`, `stayed`, or `failed` safe-window state.
+
+This keeps the choice spatial and temporal: extracting still requires returning to the passage and completing the existing team proposal.
+
+### Two-page collectible comic reader
 
 ABRIR includes a framework-light port of the page-turn mechanics used by the Atlas project.
 
@@ -39,9 +53,9 @@ ABRIR includes a framework-light port of the page-turn mechanics used by the Atl
 - Previous and next controls, left/right arrow keys, and Escape are supported.
 - A 3D page turn exposes the next spread while retaining a stable center seam.
 - Page changes dispatch a `comicPageFlip` browser event.
-- HTML pages and image pages use the same reader API.
+- Authored image pages and temporary HTML pages use the same reader API.
 
-Press `C` during a live run to open the current deterministic field-comic test. This imports only the page-spread mechanics—not Atlas's Compass, workbook, assessment, audio, bookshelf, or surrounding UI.
+The intended use is collectible backstory comics. Players will recover page fragments tied to character origins and progression arcs; completing the required set unlocks the full authored image comic in the headquarters archive. The current `C` key opens only a temporary mechanics sample. Comic reading is not intended to interrupt ordinary dialogue, object decisions, or combat.
 
 ### Instituto Travessia headquarters
 
@@ -65,7 +79,7 @@ The prototype starts and returns at a persistent headquarters interface.
 - A single room-layout contract consumed by both rendering and navigation, keeping visible props and movement collision synchronized.
 - Working combat cover: player and hostile projectiles terminate against generated architecture.
 - Enemy spawn correction and collision margins reduce the chance of processes appearing inside cover.
-- A live minimap showing both graphs, critical paths, cleared rooms, player location, overlaps, and bridges.
+- A live minimap showing both graphs, critical paths, cleared rooms, player location, overlaps, bridges, and interlace forecast markers.
 - Runtime JSON export for the current generated state, route, deployment, and field contract.
 
 The route palettes and procedural prop forms are implementation systems, not completed cultural environment art. Authored architecture, material research, signage, objects, sound, and environmental storytelling remain future location work.
@@ -117,8 +131,8 @@ The current procedural silhouettes are combat-readable placeholders, not final a
 - Local and interlace-only recoverable objects with names, rarity, condition, provenance, and market value.
 - Shrines that grant medical, timing, salvage, remote-value, or cooldown permissions.
 - Generated field contracts with local-room, remote-room, overlap, vault, remote-vault, object, value, interlace, and assigned-process requirements.
-- A safe window followed by an independently generated server interlace.
-- Active confiscation, extraction lockdown, mobile route interference, and threshold seizure consequences.
+- A safe window with a readable return-versus-stay decision, followed by an independently generated server interlace when the team stays.
+- Active confiscation, extraction lockdown, mobile route interference, threshold seizure consequences, and an immediate interlace vanguard.
 - Contract accounting, route multipliers, Institute retention, persistent filing, and final field payout.
 
 ## Controls
@@ -132,7 +146,7 @@ The current procedural silhouettes are combat-readable placeholders, not final a
 | Active ability | `R` |
 | Dodge | `Space` |
 | Interact / recover / shrine / extract | `E` |
-| Open field comic | `C` |
+| Open comic mechanics sample | `C` |
 | Turn comic spread | `←` / `→` |
 | Close comic | `Escape` |
 | Force interlace for testing | `I` |
@@ -150,6 +164,7 @@ npm run check:deployment
 npm run check:activities
 npm run check:shared-interactions
 npm run check:comic-reader
+npm run check:safe-window
 npm run check
 npm run dev
 ```
@@ -169,19 +184,19 @@ npm run preview
 
 ## Current architecture
 
-The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. A shared layout pass derives wall openings, route-profile tactical obstacles, and collision bounds. Gameplay then derives contracts, deployment ownership, combat-kit resolution, hazards, enemy pressure, assigned major processes, shrine permissions, loot provenance, archive records, shared interactions, comic packets, and progression from those deterministic states.
+The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. A shared layout pass derives wall openings, route-profile tactical obstacles, and collision bounds. Gameplay then derives contracts, deployment ownership, combat-kit resolution, hazards, enemy pressure, safe-window forecasts, assigned major processes, shrine permissions, loot provenance, archive records, shared interactions, collectible-comic presentation, and progression from those deterministic states.
 
-The browser can load a committed state, generate a replacement, or export the state it is currently running. A future backend must store and distribute map contracts, player ownership, profiles, archives, inventories, and signed run results; it does not need to recreate the renderer.
+The browser can load a committed state, generate a replacement, or export the state it is currently running. A future backend must store and distribute map contracts, player ownership, profiles, archives, inventories, collectible-page progress, and signed run results; it does not need to recreate the renderer.
 
 ```text
 src/core/       seeded local/remote generation, room architecture, and map validation
-src/content/    characters, combat kits, routes, interactions, comic packets, contracts, upgrades, items, room skins
-src/game/       deployment, activity authority, comic spread state, combat, mission, hazards, director, archive, progression, navigation
+src/content/    characters, combat kits, routes, interactions, interlace forecasts, comic packets, contracts, upgrades, items, room skins
+src/game/       deployment, activity authority, safe-window runtime, comic spread state, combat, mission, hazards, director, archive, progression, navigation
 src/render/     Three.js world, architecture, and entity construction
-src/ui/         deployment, shared interactions, comic reader, tactical HUD, minimap, major-process states, and headquarters
+src/ui/         deployment, shared interactions, safe-window forecast, comic reader, tactical HUD, minimap, major-process states, and headquarters
 public/maps/    committed reproducible map states
 public/assets/  temporary UI marks and future authored assets
-scripts/        generation, headquarters, process, layout, deployment, interaction, comic, and repository checks
+scripts/        generation, headquarters, process, layout, deployment, interaction, comic, safe-window, and repository checks
 ```
 
 See:
@@ -189,6 +204,7 @@ See:
 - [`docs/PLAYER_WORKFLOW.md`](docs/PLAYER_WORKFLOW.md)
 - [`docs/PLAYER_WORKFLOW_BACKLOG.md`](docs/PLAYER_WORKFLOW_BACKLOG.md)
 - [`docs/PLAYER_ACTIVITY_AUTHORITY.md`](docs/PLAYER_ACTIVITY_AUTHORITY.md)
+- [`docs/SAFE_WINDOW_CHOICE.md`](docs/SAFE_WINDOW_CHOICE.md)
 - [`docs/COMIC_PAGE_FLIP.md`](docs/COMIC_PAGE_FLIP.md)
 - [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md)
 - [`docs/PLAYABLE_SLICE.md`](docs/PLAYABLE_SLICE.md)
@@ -201,4 +217,4 @@ See:
 
 ## Provenance
 
-This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, tactical architecture, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, multiplayer character ownership, shared interactions, comic sequences, and a headquarters economy.
+This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, tactical architecture, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, multiplayer character ownership, shared interactions, deliberate interlace risk, collectible backstory comics, and a headquarters economy.
