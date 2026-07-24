@@ -24,16 +24,10 @@ export class Minimap {
     this.cleared = new Set([mapState.entranceRoomId]);
     this.overlapsVisited = new Set();
     this.interlaced = false;
-    this.tutorialTargetRoomId = mapState.tutorialTargetRoomId ?? null;
     this.resize();
     this.draw();
     window.addEventListener('resize', () => {
       this.resize();
-      this.draw();
-    });
-    window.addEventListener('abrir:tutorial-target', (event) => {
-      this.tutorialTargetRoomId = event.detail?.completed ? null : event.detail?.roomId ?? null;
-      this.mapState.tutorialTargetRoomId = this.tutorialTargetRoomId;
       this.draw();
     });
   }
@@ -72,8 +66,9 @@ export class Minimap {
   }
 
   drawTutorialMarker(toPoint) {
-    if (this.tutorialTargetRoomId === null || this.tutorialTargetRoomId === undefined) return;
-    const room = this.baseById.get(this.tutorialTargetRoomId);
+    const targetRoomId = this.mapState.tutorialTargetRoomId;
+    if (targetRoomId === null || targetRoomId === undefined) return;
+    const room = this.baseById.get(targetRoomId);
     if (!room) return;
     const point = toPoint(room);
     this.ctx.beginPath();
@@ -221,9 +216,10 @@ export class Minimap {
 
     ctx.fillStyle = 'rgba(213, 182, 105, .72)';
     ctx.font = '8px ui-monospace, monospace';
+    const tutorialActive = this.mapState.tutorialTargetRoomId !== null && this.mapState.tutorialTargetRoomId !== undefined;
     const legend = this.interlaced
       ? 'LOCAL + REMOTE // O OPPORTUNITY / × DANGER'
-      : this.tutorialTargetRoomId !== null && this.tutorialTargetRoomId !== undefined
+      : tutorialActive
         ? 'LOCAL STATE // T ORIENTATION TARGET'
         : 'LOCAL STATE';
     ctx.fillText(legend, 8, size - 8);
