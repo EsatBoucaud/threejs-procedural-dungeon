@@ -51,9 +51,6 @@ function dispatch(snapshot, deployment, actor, event = 'update') {
       activeActor: structuredClone(actor ?? null),
     },
   }));
-  window.dispatchEvent(new CustomEvent('abrir:tutorial-target', {
-    detail: { roomId: snapshot.currentTargetRoomId, completed: snapshot.completed },
-  }));
 }
 
 function pulseRoom(controller, roomId, color = 0xe2c77e, radius = 4.2) {
@@ -82,6 +79,7 @@ export class FirstRunTutorialRuntime {
     this.markerPhase = 0;
     this.inInspectionRange = false;
     this.lastRoomId = null;
+    this.lastTargetRoomId = undefined;
     this.lastSnapshotKey = '';
     this.destroyed = false;
     this.completionEmitted = false;
@@ -148,7 +146,10 @@ export class FirstRunTutorialRuntime {
     const key = JSON.stringify({ phase: snapshot.phase, tasks: snapshot.tasks, target: snapshot.currentTargetRoomId });
     if (event === 'update' && key === this.lastSnapshotKey) return;
     this.lastSnapshotKey = key;
+    const targetChanged = snapshot.currentTargetRoomId !== this.lastTargetRoomId;
+    this.lastTargetRoomId = snapshot.currentTargetRoomId;
     this.controller.mapState.tutorialTargetRoomId = snapshot.currentTargetRoomId;
+    if (targetChanged) this.controller.reportProgress();
     dispatch(snapshot, this.controller.mapState.deployment, this.controller.activeActor, event);
   }
 
@@ -206,11 +207,11 @@ export class FirstRunTutorialRuntime {
     }
 
     const roomId = this.controller.mission.currentRoom?.id ?? this.controller.mapState.entranceRoomId;
-    if (roomId !== this.lastRoomId) {
+    const beforeEntry = this.system.snapshot();
+    const afterEntry = this.system.enterRoom(roomId, this.controller.elapsed);
+    if (roomId !== this.lastRoomId || beforeEntry.phase !== afterEntry.phase) {
+      this.handlePhaseChange(beforeEntry, afterEntry);
       this.lastRoomId = roomId;
-      const before = this.system.snapshot();
-      const after = this.system.enterRoom(roomId, this.controller.elapsed);
-      this.handlePhaseChange(before, after);
     }
 
     if (this.controller.mission.roomStates.get(this.plan.combatRoomId)?.cleared) {
