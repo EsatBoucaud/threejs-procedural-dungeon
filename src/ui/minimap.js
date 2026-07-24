@@ -24,10 +24,16 @@ export class Minimap {
     this.cleared = new Set([mapState.entranceRoomId]);
     this.overlapsVisited = new Set();
     this.interlaced = false;
+    this.tutorialTargetRoomId = mapState.tutorialTargetRoomId ?? null;
     this.resize();
     this.draw();
     window.addEventListener('resize', () => {
       this.resize();
+      this.draw();
+    });
+    window.addEventListener('abrir:tutorial-target', (event) => {
+      this.tutorialTargetRoomId = event.detail?.completed ? null : event.detail?.roomId ?? null;
+      this.mapState.tutorialTargetRoomId = this.tutorialTargetRoomId;
       this.draw();
     });
   }
@@ -63,6 +69,21 @@ export class Minimap {
     this.ctx.moveTo(start.x, start.y);
     this.ctx.lineTo(end.x, end.y);
     this.ctx.stroke();
+  }
+
+  drawTutorialMarker(toPoint) {
+    if (this.tutorialTargetRoomId === null || this.tutorialTargetRoomId === undefined) return;
+    const room = this.baseById.get(this.tutorialTargetRoomId);
+    if (!room) return;
+    const point = toPoint(room);
+    this.ctx.beginPath();
+    this.ctx.arc(point.x, point.y, 8.5, 0, Math.PI * 2);
+    this.ctx.strokeStyle = 'rgba(244, 213, 125, .98)';
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+    this.ctx.fillStyle = '#f4d57d';
+    this.ctx.font = 'bold 8px ui-monospace, monospace';
+    this.ctx.fillText('T', point.x - 2.5, point.y + 2.8);
   }
 
   drawForecastMarkers(toPoint) {
@@ -196,10 +217,16 @@ export class Minimap {
       for (const room of this.mapState.interlace?.rooms ?? []) drawRoom(room, true);
       this.drawForecastMarkers(toPoint);
     }
+    this.drawTutorialMarker(toPoint);
 
     ctx.fillStyle = 'rgba(213, 182, 105, .72)';
     ctx.font = '8px ui-monospace, monospace';
-    ctx.fillText(this.interlaced ? 'LOCAL + REMOTE // O OPPORTUNITY / × DANGER' : 'LOCAL STATE', 8, size - 8);
+    const legend = this.interlaced
+      ? 'LOCAL + REMOTE // O OPPORTUNITY / × DANGER'
+      : this.tutorialTargetRoomId !== null && this.tutorialTargetRoomId !== undefined
+        ? 'LOCAL STATE // T ORIENTATION TARGET'
+        : 'LOCAL STATE';
+    ctx.fillText(legend, 8, size - 8);
     ctx.strokeStyle = 'rgba(213, 182, 105, .24)';
     ctx.strokeRect(0.5, 0.5, size - 1, size - 1);
   }
