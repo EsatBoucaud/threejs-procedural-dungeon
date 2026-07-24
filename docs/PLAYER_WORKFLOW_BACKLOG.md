@@ -68,12 +68,16 @@ Acceptance test: an all-ranged or all-melee four-character composition passes va
 
 ## Priority 5 — First-room teaching sequence
 
-- [ ] Portal-threshold movement teaching occurs in-engine.
-- [ ] First stable room teaches exits, map relationship, interaction, and inspection.
-- [ ] First combat room teaches attacks, abilities, dodge, teammate reading, and real cover.
-- [ ] Two-player tutorial teaches ownership-scoped swapping.
-- [ ] Four-player tutorial teaches teammate identification without implying character swapping.
-- [ ] Tutorial feedback reacts after successful actions instead of pausing combat.
+- [x] Portal-threshold movement teaching occurs in-engine.
+- [x] First stable room teaches exits, map relationship, interaction, and inspection.
+- [x] First combat room teaches attacks, abilities, dodge, teammate reading, and real cover.
+- [x] Two-player tutorial teaches ownership-scoped swapping.
+- [x] Four-player tutorial teaches roster identity without implying character swapping.
+- [x] Tutorial feedback reacts after successful actions instead of pausing combat.
+- [x] Tutorial rooms derive from the generated critical path rather than a detached training map.
+- [x] Tutorial completion persists locally and can be forced with `?tutorial=1` for testing.
+
+The four-player lesson currently teaches the ownership roster because remote teammate bodies are not implemented yet. World-space teammate identification remains part of Priority 4.
 
 ## Priority 6 — Object meaning and collective decisions
 
@@ -121,11 +125,11 @@ The comic reader should not interrupt ordinary dialogue, object decisions, comba
 
 ## Current implementation boundary
 
-The current build implements deployment ownership, unrestricted kit composition, shared player-led interactions, object interpretation and voting, and the safe-window return-versus-interlace choice. It still simulates one locally controlled entity and does not yet provide networked two-player or four-player field presence.
+The current build implements deployment ownership, unrestricted kit composition, shared player-led interactions, object interpretation and voting, the safe-window return-versus-interlace choice, and an action-driven first-run teaching sequence. It still simulates one locally controlled entity and does not yet provide networked two-player or four-player field presence.
 
 ## Do not expand before completion
 
-Until ownership, swapping, four-player runtime, and the first-run workflow play cleanly, do not prioritize:
+Until independent character entities, four-player runtime, and the redeployment loop play cleanly, do not prioritize:
 
 - additional route names;
 - additional major processes;

@@ -1,0 +1,169 @@
+#tutorial-guide {
+  position: fixed;
+  left: 18px;
+  top: 118px;
+  z-index: 17;
+  width: min(390px, calc(100vw - 36px));
+  display: none;
+  pointer-events: none;
+}
+
+#tutorial-guide.visible {
+  display: block;
+  animation: tutorial-guide-enter 240ms ease both;
+}
+
+.tutorial-guide-shell {
+  border: 1px solid rgba(105, 207, 195, .28);
+  background: rgba(7, 10, 16, .93);
+  box-shadow: 0 22px 80px rgba(0, 0, 0, .46), inset 0 0 0 1px rgba(255, 255, 255, .025);
+  backdrop-filter: blur(14px);
+}
+
+.tutorial-guide-shell > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+.tutorial-guide-shell > header span,
+.tutorial-guide-shell > header b {
+  font-size: 8px;
+  letter-spacing: .13em;
+}
+
+.tutorial-guide-shell > header span { color: #70d0c4; }
+.tutorial-guide-shell > header b { color: #d9c17d; }
+
+.tutorial-guide-shell main { padding: 13px; }
+.tutorial-guide-shell h2 {
+  margin: 0;
+  color: #e2c77e;
+  font: 20px/1 Georgia, serif;
+  letter-spacing: .02em;
+}
+.tutorial-guide-shell p {
+  margin: 8px 0 0;
+  color: #aeb7c3;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.tutorial-key {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  border: 1px solid rgba(226, 199, 126, .22);
+  background: rgba(226, 199, 126, .045);
+  color: #dac57f;
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+.tutorial-key kbd {
+  min-width: 26px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .05);
+  color: #f2e2ae;
+  text-align: center;
+}
+
+.tutorial-roster {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, .07);
+}
+.tutorial-roster article {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #0b0f16;
+  opacity: .66;
+}
+.tutorial-roster article.owned { opacity: 1; }
+.tutorial-roster article.active { box-shadow: inset 0 -2px var(--tutorial-character); }
+.tutorial-roster article > b {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--tutorial-character) 52%, transparent);
+  color: var(--tutorial-character);
+  font-size: 10px;
+}
+.tutorial-roster span,
+.tutorial-roster strong,
+.tutorial-roster small { display: block; min-width: 0; }
+.tutorial-roster strong {
+  overflow: hidden;
+  color: #d6dce2;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tutorial-roster small {
+  margin-top: 3px;
+  color: #77828f;
+  font-size: 7px;
+  letter-spacing: .08em;
+}
+.tutorial-roster article.active small { color: var(--tutorial-character); }
+
+.tutorial-task-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.tutorial-task {
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  color: #818c99;
+  font-size: 8px;
+  letter-spacing: .08em;
+}
+.tutorial-task.complete {
+  border-color: rgba(105, 207, 195, .33);
+  color: #9be1d7;
+  background: rgba(105, 207, 195, .055);
+}
+.tutorial-task.optional:not(.complete) { border-style: dashed; }
+
+#tutorial-guide.phase-combat .tutorial-guide-shell { border-color: rgba(220, 105, 86, .38); }
+#tutorial-guide.phase-combat .tutorial-guide-shell > header span { color: #e47d68; }
+#tutorial-guide.phase-complete .tutorial-guide-shell {
+  border-color: rgba(226, 199, 126, .5);
+  background: rgba(13, 14, 15, .95);
+}
+
+body.shared-interaction-open #tutorial-guide,
+body.comic-reader-open #tutorial-guide { opacity: .12; }
+
+@keyframes tutorial-guide-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 760px) {
+  #tutorial-guide {
+    left: 7px;
+    top: 70px;
+    width: calc(100vw - 14px);
+  }
+  .tutorial-guide-shell main { padding: 10px; }
+  .tutorial-guide-shell h2 { font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tutorial-guide.visible { animation: none; }
+}
