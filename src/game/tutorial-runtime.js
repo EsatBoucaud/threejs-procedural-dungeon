@@ -350,10 +350,17 @@ RunController.prototype.switchOperative = function tutorialSwap() {
 
 CombatSystem.prototype.damageEnemy = function tutorialDamageEnemy(enemy, amount, operative, player) {
   const runtime = tutorialByCombat.get(this);
-  if (enemy?.tutorialCoverTarget && runtime && runtime.system.phase === 'combat' && !runtime.system.tasks.cover) {
+  if (enemy?.tutorialCoverTarget && runtime) {
+    const ownershipPending = !runtime.system.tasks.ownership;
     const enteredAt = runtime.system.combatEnteredAt ?? runtime.controller.elapsed;
-    const protectionActive = runtime.controller.elapsed - enteredAt < 8;
-    if (protectionActive && enemy.health - amount <= 0) amount = Math.max(0, enemy.health - 1);
+    const coverWindowActive = (
+      runtime.system.phase === 'combat'
+      && !runtime.system.tasks.cover
+      && runtime.controller.elapsed - enteredAt < 8
+    );
+    if ((ownershipPending || coverWindowActive) && enemy.health - amount <= 0) {
+      amount = Math.max(0, enemy.health - 1);
+    }
   }
   return previousDamageEnemy.call(this, enemy, amount, operative, player);
 };
