@@ -17,6 +17,32 @@ The deployment interface assigns all four field characters exactly once, selects
 
 Character identity and combat style are separate decisions. Any character can equip any current combat kit, duplicate kits are valid, and no equal melee/ranged split is enforced. The current local prototype validates the ownership and swapping rules; completed networking, remote-player replication, and reconnect behavior remain future work.
 
+### Shared player-led interactions
+
+Any eligible player may initiate dialogue, inspect or recover objects, negotiate, start or join a card battle, operate a shrine or system, propose a route decision, and request extraction. These activities are not reserved by character identity, combat kit, or player seat.
+
+- Dialogue control can be offered to and accepted by another player.
+- Consequential actions expose agree, oppose, and abstain responses.
+- Tied decisions resolve through a visible deterministic d20 clash.
+- Objects show Institute, network, and local-human readings before recovery.
+- Shared card battles rotate turns across participating players.
+- The activity log records participation, acting player, acting character, and resolved outcome.
+
+The browser prototype can switch local perspective between players to exercise the workflow without claiming completed online replication.
+
+### Two-page comic reader
+
+ABRIR includes a framework-light port of the page-turn mechanics used by the Atlas project.
+
+- Two portrait comic pages remain visible as one 17:11 spread.
+- Page turns advance or retreat one full spread at a time.
+- Previous and next controls, left/right arrow keys, and Escape are supported.
+- A 3D page turn exposes the next spread while retaining a stable center seam.
+- Page changes dispatch a `comicPageFlip` browser event.
+- HTML pages and image pages use the same reader API.
+
+Press `C` during a live run to open the current deterministic field-comic test. This imports only the page-spread mechanics—not Atlas's Compass, workbook, assessment, audio, bookshelf, or surrounding UI.
+
 ### Instituto Travessia headquarters
 
 The prototype starts and returns at a persistent headquarters interface.
@@ -106,6 +132,9 @@ The current procedural silhouettes are combat-readable placeholders, not final a
 | Active ability | `R` |
 | Dodge | `Space` |
 | Interact / recover / shrine / extract | `E` |
+| Open field comic | `C` |
+| Turn comic spread | `←` / `→` |
+| Close comic | `Escape` |
 | Force interlace for testing | `I` |
 
 ## Run locally
@@ -118,6 +147,9 @@ npm run check:headquarters
 npm run check:processes
 npm run check:layout
 npm run check:deployment
+npm run check:activities
+npm run check:shared-interactions
+npm run check:comic-reader
 npm run check
 npm run dev
 ```
@@ -137,25 +169,27 @@ npm run preview
 
 ## Current architecture
 
-The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. A shared layout pass derives wall openings, route-profile tactical obstacles, and collision bounds. Gameplay then derives contracts, deployment ownership, combat-kit resolution, hazards, enemy pressure, assigned major processes, shrine permissions, loot provenance, archive records, and progression from those deterministic states.
+The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. A shared layout pass derives wall openings, route-profile tactical obstacles, and collision bounds. Gameplay then derives contracts, deployment ownership, combat-kit resolution, hazards, enemy pressure, assigned major processes, shrine permissions, loot provenance, archive records, shared interactions, comic packets, and progression from those deterministic states.
 
 The browser can load a committed state, generate a replacement, or export the state it is currently running. A future backend must store and distribute map contracts, player ownership, profiles, archives, inventories, and signed run results; it does not need to recreate the renderer.
 
 ```text
 src/core/       seeded local/remote generation, room architecture, and map validation
-src/content/    characters, combat kits, routes, Chave processes, contracts, upgrades, items, room skins
-src/game/       deployment, combat, mission, hazards, director, archive, progression, navigation
+src/content/    characters, combat kits, routes, interactions, comic packets, contracts, upgrades, items, room skins
+src/game/       deployment, activity authority, comic spread state, combat, mission, hazards, director, archive, progression, navigation
 src/render/     Three.js world, architecture, and entity construction
-src/ui/         deployment, tactical HUD, minimap, major-process states, and headquarters
+src/ui/         deployment, shared interactions, comic reader, tactical HUD, minimap, major-process states, and headquarters
 public/maps/    committed reproducible map states
 public/assets/  temporary UI marks and future authored assets
-scripts/        generation, headquarters, process, layout, deployment, and repository checks
+scripts/        generation, headquarters, process, layout, deployment, interaction, comic, and repository checks
 ```
 
 See:
 
 - [`docs/PLAYER_WORKFLOW.md`](docs/PLAYER_WORKFLOW.md)
 - [`docs/PLAYER_WORKFLOW_BACKLOG.md`](docs/PLAYER_WORKFLOW_BACKLOG.md)
+- [`docs/PLAYER_ACTIVITY_AUTHORITY.md`](docs/PLAYER_ACTIVITY_AUTHORITY.md)
+- [`docs/COMIC_PAGE_FLIP.md`](docs/COMIC_PAGE_FLIP.md)
 - [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md)
 - [`docs/PLAYABLE_SLICE.md`](docs/PLAYABLE_SLICE.md)
 - [`docs/MAP_STATE_CONTRACT.md`](docs/MAP_STATE_CONTRACT.md)
@@ -167,4 +201,4 @@ See:
 
 ## Provenance
 
-This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, tactical architecture, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, multiplayer character ownership, and a headquarters economy.
+This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, tactical architecture, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, multiplayer character ownership, shared interactions, comic sequences, and a headquarters economy.

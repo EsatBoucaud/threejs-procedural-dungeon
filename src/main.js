@@ -3,7 +3,9 @@ import './ui/headquarters.css';
 import './ui/processes.css';
 import './ui/deployment-builder.css';
 import './ui/shared-interactions.css';
+import './ui/comic-reader.css';
 import { applyDeployment } from './content/characters.js';
+import { createFieldComic } from './content/field-comic.js';
 import { seedForRoute } from './content/routes.js';
 import { generateMapState, validateMapState } from './core/dungeon-generator.js';
 import {
@@ -14,6 +16,7 @@ import {
 import { InteractiveRunController } from './game/interactive-run-controller.js';
 import { loadProfile, rankTitle } from './game/progression-system.js';
 import { WorldRenderer } from './render/world-renderer.js';
+import { ComicReader } from './ui/comic-reader.js';
 import { DeploymentBuilder } from './ui/deployment-builder.js';
 import { Headquarters } from './ui/headquarters.js';
 import { Minimap } from './ui/minimap.js';
@@ -69,6 +72,7 @@ const elements = {
   minimap: document.querySelector('#minimap-canvas'),
   interactionRoot: document.querySelector('#shared-interaction-root'),
   interactionHint: document.querySelector('#interaction-hint'),
+  comicRoot: document.querySelector('#comic-reader-root'),
 };
 
 const input = {
@@ -102,6 +106,14 @@ const sharedPanel = new SharedInteractionPanel(elements.interactionRoot, {
   onAction: (action) => {
     const result = run?.handleSharedInteractionAction(action);
     if (result && result.success === false) feed(`Interaction request refused: ${result.reason}.`, 'danger');
+  },
+});
+
+const comicReader = new ComicReader(elements.comicRoot, {
+  onOpen: () => {
+    elements.crosshair.style.opacity = '0';
+    elements.interactionHint.classList.remove('visible');
+    feed('Two-page field comic opened. Arrow keys turn full spreads.', 'good');
   },
 });
 
@@ -178,7 +190,7 @@ function renderContract(contract, status) {
 }
 
 function updateInteractionHint(hint) {
-  if (!hint || sharedPanel.isOpen()) {
+  if (!hint || sharedPanel.isOpen() || comicReader.isOpen()) {
     elements.interactionHint.classList.remove('visible');
     elements.interactionHint.textContent = '';
     return;
@@ -243,6 +255,7 @@ function createRunEvents() {
     },
     onInteractionHint: updateInteractionHint,
     onSharedInteraction: (snapshot) => {
+      if (snapshot.activeSession && comicReader.isOpen()) comicReader.close('shared-interaction');
       sharedPanel.update(snapshot);
       document.body.classList.toggle('shared-interaction-open', Boolean(snapshot.activeSession));
       if (snapshot.activeSession) elements.interactionHint.classList.remove('visible');
@@ -281,6 +294,7 @@ function installRun(state, deployment = state.deployment ?? pendingDeployment) {
   const normalizedDeployment = normalizeDeployment(deployment);
   state.deployment = structuredClone(normalizedDeployment);
   applyDeployment(normalizedDeployment);
+  if (comicReader.isOpen()) comicReader.close('new-run');
 
   mapState = state;
   renderer.resetEntities();
@@ -296,7 +310,7 @@ function installRun(state, deployment = state.deployment ?? pendingDeployment) {
   elements.bossBanner.classList.remove('visible');
   elements.threatFill.style.width = '0%';
   elements.interactionHint.classList.remove('visible');
-  document.body.classList.remove('interlaced', 'high-threat', 'shared-interaction-open');
+  document.body.classList.remove('interlaced', 'high-threat', 'shared-interaction-open', 'comic-reader-open');
   input.aimWorld = run.player.position.clone();
   input.aimWorld.z -= 5;
   updateProfile();
@@ -392,6 +406,12 @@ function exportMap() {
   URL.revokeObjectURL(url);
 }
 
+function openFieldComic() {
+  if (!mapState || comicReader.isOpen() || sharedPanel.isOpen()) return;
+  const title = mapState.route?.name ? `${mapState.route.name} FIELD COMIC` : 'FIELD COMIC';
+  comicReader.open(createFieldComic(mapState, run), { title });
+}
+
 function movementVector() {
   return {
     x: (input.keys.has('KeyD') ? 1 : 0) - (input.keys.has('KeyA') ? 1 : 0),
@@ -402,8 +422,13 @@ function movementVector() {
 window.addEventListener('keydown', (event) => {
   input.keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
+  if (comicReader.isOpen()) return;
   if (!started || event.repeat) return;
   if (sharedPanel.isOpen()) return;
+  if (event.code === 'KeyC') {
+    openFieldComic();
+    return;
+  }
   if (event.code === 'KeyQ') {
     if (run.teamSnapshot().length > 1) run.switchOperative();
     else feed('Four-player ownership: this player has no reserve character to swap into.', '');
@@ -420,11 +445,11 @@ canvas.addEventListener('pointermove', (event) => {
   input.aimWorld = renderer.screenToWorld(event.clientX, event.clientY);
   elements.crosshair.style.left = `${event.clientX}px`;
   elements.crosshair.style.top = `${event.clientY}px`;
-  elements.crosshair.style.opacity = started && !sharedPanel.isOpen() ? '1' : '0';
+  elements.crosshair.style.opacity = started && !sharedPanel.isOpen() && !comicReader.isOpen() ? '1' : '0';
 });
 canvas.addEventListener('pointerleave', () => { elements.crosshair.style.opacity = '0'; });
 canvas.addEventListener('pointerdown', (event) => {
-  if (!started || sharedPanel.isOpen() || event.button !== 0) return;
+  if (!started || sharedPanel.isOpen() || comicReader.isOpen() || event.button !== 0) return;
   input.aimWorld = renderer.screenToWorld(event.clientX, event.clientY);
   run.attack(input.aimWorld);
 });
@@ -439,8 +464,8 @@ function frame(time) {
   if (run) {
     const aim = input.aimWorld ?? run.player.position.clone();
     if (started) {
-      const movement = sharedPanel.isOpen() ? { x: 0, z: 0 } : movementVector();
-      run.update(delta, movement, aim);
+      const overlayOpen = sharedPanel.isOpen() || comicReader.isOpen();
+      run.update(delta, overlayOpen ? { x: 0, z: 0 } : movementVector(), aim);
     } else renderer.update(delta, run.player.position, aim);
   }
   requestAnimationFrame(frame);

@@ -22,6 +22,7 @@ jobs:
       - run: npm run check:deployment
       - run: npm run check:activities
       - run: npm run check:shared-interactions
+      - run: npm run check:comic-reader
       - run: npm run generate:map -- ABRIR-001 public/maps/abrir-001.json
       - run: npm run check
       - run: npm run build
