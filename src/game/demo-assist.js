@@ -14,6 +14,10 @@ function result(success, action, message, extra = {}) {
   return { success, action, message, ...extra };
 }
 
+function acceptsObject(room) {
+  return room && !['entrance', 'breach', 'shrine'].includes(room.type);
+}
+
 export class DemoAssist {
   constructor(run) {
     this.run = run;
@@ -96,14 +100,18 @@ export class DemoAssist {
       return { ...moved, action: 'stage-object', lootId: existing.lootId, staged: false };
     }
 
-    const room = this.run.mission.currentRoom
-      ?? this.run.mission.rooms.get(this.run.mapState.entranceRoomId)
-      ?? this.run.mapState.rooms[0];
+    const current = this.run.mission.currentRoom;
+    const room = acceptsObject(current)
+      ? current
+      : this.run.mapState.rooms.find((entry) => ['archive', 'treasure'].includes(entry.type))
+        ?? this.run.mapState.rooms.find((entry) => acceptsObject(entry));
+    if (!room) return result(false, 'stage-object', 'No local room can stage a recoverable object.');
+
     this.run.mission.dropLoot(room);
     const staged = [...this.run.mission.loot].reverse().find((entry) => entry.roomId === room.id && !entry.collected);
     if (!staged) return result(false, 'stage-object', 'The selected room does not accept recoverable objects.');
     const moved = this.teleport(staged.position, `staged object ${staged.item.name}`);
-    return { ...moved, action: 'stage-object', lootId: staged.lootId, staged: true };
+    return { ...moved, action: 'stage-object', lootId: staged.lootId, staged: true, roomId: room.id };
   }
 
   activateInterlace() {
