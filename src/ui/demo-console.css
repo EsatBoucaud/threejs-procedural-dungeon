@@ -3,7 +3,7 @@
   top: 118px;
   left: 216px;
   z-index: 38;
-  width: min(390px, calc(100vw - 240px));
+  width: min(350px, calc(100vw - 240px));
   display: none;
   pointer-events: none;
 }
@@ -155,12 +155,12 @@ body.comic-reader-open #demo-console-root { opacity: .2; pointer-events: none; }
   #demo-console-root {
     top: 76px;
     left: 12px;
-    width: min(390px, calc(100vw - 24px));
+    width: min(350px, calc(100vw - 24px));
   }
 }
 
 @media (max-width: 760px) {
-  #demo-console-root { top: 62px; left: 6px; width: min(360px, calc(100vw - 12px)); }
+  #demo-console-root { top: 62px; left: 6px; width: min(350px, calc(100vw - 12px)); }
   .demo-run-order { display: none; }
   .demo-console-state { display: none; }
   .demo-console-shell header { grid-template-columns: 1fr auto; }
