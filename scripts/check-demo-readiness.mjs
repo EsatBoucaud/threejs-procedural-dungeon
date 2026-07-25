@@ -66,7 +66,7 @@ const run = {
       stagedRoom = room;
       this.roomStates.get(room.id).lootDropped = true;
       this.loot.push({
-        lootId: 'loot-demo',
+        lootId: `loot-demo-${this.loot.length + 1}`,
         roomId: room.id,
         collected: false,
         resolved: false,
@@ -93,7 +93,7 @@ assert.deepEqual(run.dodgeCooldowns, [0, 0, 0, 0]);
 
 const staged = assist.stageObject();
 assert.equal(staged.success, true);
-assert.equal(staged.lootId, 'loot-demo');
+assert.equal(staged.lootId, 'loot-demo-1');
 assert.ok(stagedRoom, 'The assist should create an object when no unresolved object exists.');
 assert.ok(!['entrance', 'breach', 'shrine'].includes(stagedRoom.type), 'The demo object must be staged in an eligible room.');
 assert.equal(staged.roomId, stagedRoom.id);
@@ -107,11 +107,11 @@ assert.equal(secondStage.success, true, 'The assist should find another unused e
 assert.notEqual(secondStage.roomId, staged.roomId);
 
 const originalWalkability = run.isWalkable;
-const currentPosition = run.player.position.clone();
-run.isWalkable = (position) => position.distanceTo(currentPosition) < 0.01;
-const fallback = assist.teleport(new THREE.Vector3(999, 0, 999), 'blocked test coordinate');
-assert.equal(fallback.success, true, 'Blocked targets should fall back to the current walkable position rather than placing inside geometry.');
-assert.ok(run.player.position.distanceTo(currentPosition) < 0.01);
+const beforeBlockedTeleport = run.player.position.clone();
+run.isWalkable = () => false;
+const blocked = assist.teleport(new THREE.Vector3(999, 0, 999), 'blocked test coordinate');
+assert.equal(blocked.success, false, 'Unreachable targets must report failure rather than claiming the presenter is in position.');
+assert.ok(run.player.position.distanceTo(beforeBlockedTeleport) < 0.01, 'Failed assisted movement must leave the player in place.');
 run.isWalkable = originalWalkability;
 
 const interlace = assist.activateInterlace();
@@ -124,4 +124,4 @@ assert.equal(overlap.overlapId, state.interlace.overlaps[0].id);
 const disabledAssist = new DemoAssist({ ...run, mapState: { ...state, demoMode: null } });
 assert.equal(disabledAssist.restoreSquad().success, false, 'Demo assists must not leak into ordinary runs.');
 
-console.log(`Demo readiness check passed: ${state.rooms.length} local rooms, ${state.interlace.rooms.length} remote rooms, ${state.interlace.overlaps.length} overlaps, fixed 2P deployment, clean profile, guarded assists, safe fallback movement, presenter-controlled interlace.`);
+console.log(`Demo readiness check passed: ${state.rooms.length} local rooms, ${state.interlace.rooms.length} remote rooms, ${state.interlace.overlaps.length} overlaps, fixed 2P deployment, clean profile, guarded assists, explicit blocked-target failure, presenter-controlled interlace.`);
