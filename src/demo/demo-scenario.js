@@ -8,7 +8,7 @@ export const CODEX_DEMO = Object.freeze({
   seed: 'ABRIR-CODEX-DEMO-001',
   roomCount: 18,
   loopChance: 0.36,
-  interlaceAtSeconds: 44,
+  interlaceAtSeconds: 180,
 });
 
 export function isDemoRequested(search = globalThis.location?.search ?? '') {
