@@ -8,7 +8,7 @@ import { DirectorSystem } from './director-system.js';
 import { HazardSystem } from './hazard-system.js';
 import { MissionSystem } from './mission-system.js';
 import { createWalkability } from './navigation.js';
-import { hasUpgrade, loadProfile, recordRun } from './progression-system.js';
+import { createDemoProfile, hasUpgrade, loadProfile, recordRun } from './progression-system.js';
 
 const TMP = new THREE.Vector3();
 
@@ -21,7 +21,8 @@ export class RunController {
     this.renderer = renderer;
     this.mapState = mapState;
     this.events = events;
-    this.profile = loadProfile();
+    this.isDemoRun = Boolean(mapState.demoMode?.assistEnabled);
+    this.profile = this.isDemoRun ? createDemoProfile() : loadProfile();
     this.route = mapState.route ?? null;
     this.majorProcess = processForMap(mapState);
     this.contract = mapState.contract ?? contractForSeed(mapState.seed, this.majorProcess.id);
@@ -466,6 +467,7 @@ export class RunController {
       routeName: this.route?.name ?? 'FIELD TEST',
       routeRewardMultiplier: this.route?.rewardMultiplier ?? 1,
       deployment: structuredClone(this.mapState.deployment ?? null),
+      demoMode: this.isDemoRun ? structuredClone(this.mapState.demoMode) : null,
       elapsedSeconds: Math.round(this.elapsed),
       recovered: this.mission.recovered,
       seized: this.seizedAtExtraction,
@@ -490,14 +492,20 @@ export class RunController {
       activityParticipation: activity.participation,
       timestamp: new Date().toISOString(),
     };
-    result.profile = recordRun(result);
-    result.archiveRecord = success ? recordRecoveredObjects(result) : { entries: [], held: [], stored: [] };
-    try {
-      const history = JSON.parse(localStorage.getItem('abrir.runHistory') ?? '[]');
-      history.unshift(result);
-      localStorage.setItem('abrir.runHistory', JSON.stringify(history.slice(0, 20)));
-    } catch {
-      // Storage is a temporary adapter; blocked storage must not break extraction.
+
+    if (this.isDemoRun) {
+      result.profile = structuredClone(this.profile);
+      result.archiveRecord = { entries: [], held: [], stored: [], skipped: 'demo-mode' };
+    } else {
+      result.profile = recordRun(result);
+      result.archiveRecord = success ? recordRecoveredObjects(result) : { entries: [], held: [], stored: [] };
+      try {
+        const history = JSON.parse(localStorage.getItem('abrir.runHistory') ?? '[]');
+        history.unshift(result);
+        localStorage.setItem('abrir.runHistory', JSON.stringify(history.slice(0, 20)));
+      } catch {
+        // Storage is a temporary adapter; blocked storage must not break extraction.
+      }
     }
     this.events.onFinish?.(result);
   }
