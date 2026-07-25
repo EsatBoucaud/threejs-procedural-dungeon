@@ -26,6 +26,7 @@ const required = [
   'src/content/room-skins.js',
   'src/content/routes.js',
   'src/content/upgrades.js',
+  'src/demo/demo-scenario.js',
   'src/render/scene-factory.js',
   'src/render/world-renderer.js',
   'src/render/entity-factory.js',
@@ -38,6 +39,7 @@ const required = [
   'src/game/safe-window-runtime.js',
   'src/game/tutorial-system.js',
   'src/game/tutorial-runtime.js',
+  'src/game/demo-assist.js',
   'src/game/combat-system.js',
   'src/game/mission-system.js',
   'src/game/director-system.js',
@@ -59,10 +61,13 @@ const required = [
   'src/ui/safe-window.css',
   'src/ui/tutorial-bootstrap.js',
   'src/ui/tutorial-guide.css',
+  'src/ui/demo-console.js',
+  'src/ui/demo-console.css',
   'docs/PLAYER_ACTIVITY_AUTHORITY.md',
   'docs/SAFE_WINDOW_CHOICE.md',
   'docs/COMIC_PAGE_FLIP.md',
   'docs/FIRST_RUN_TUTORIAL.md',
+  'docs/CODEX_LIVE_DEMO.md',
   'public/assets/ui/instituto-travessia-seal.svg',
   'public/assets/ui/chave-geral-audit-mark.svg',
   'public/maps/abrir-001.json',
@@ -117,6 +122,9 @@ const safeUiSource = await fs.readFile(path.join(root, 'src/ui/safe-window-boots
 const tutorialSource = await fs.readFile(path.join(root, 'src/game/tutorial-system.js'), 'utf8');
 const tutorialRuntimeSource = await fs.readFile(path.join(root, 'src/game/tutorial-runtime.js'), 'utf8');
 const tutorialUiSource = await fs.readFile(path.join(root, 'src/ui/tutorial-bootstrap.js'), 'utf8');
+const demoScenarioSource = await fs.readFile(path.join(root, 'src/demo/demo-scenario.js'), 'utf8');
+const demoAssistSource = await fs.readFile(path.join(root, 'src/game/demo-assist.js'), 'utf8');
+const demoUiSource = await fs.readFile(path.join(root, 'src/ui/demo-console.js'), 'utf8');
 const missionSource = await fs.readFile(path.join(root, 'src/game/mission-system.js'), 'utf8');
 const directorSource = await fs.readFile(path.join(root, 'src/game/director-system.js'), 'utf8');
 const rendererSource = await fs.readFile(path.join(root, 'src/render/world-renderer.js'), 'utf8');
@@ -134,11 +142,14 @@ if (!mainSource.includes('SharedInteractionPanel')) throw new Error('Shared inte
 if (!mainSource.includes('InteractiveRunController')) throw new Error('Live runs must use the interaction-aware controller.');
 if (!mainSource.includes('ComicReader')) throw new Error('The two-page comic reader must remain wired into live play.');
 if (!mainSource.includes('createFieldComic')) throw new Error('Live play must expose a deterministic comic packet.');
+if (!mainSource.includes('createDemoState') || !mainSource.includes('launchDemo')) throw new Error('The fixed live-demo launch must remain wired into startup.');
+if (!mainSource.includes('DemoAssist') || !mainSource.includes('DemoConsole')) throw new Error('Guarded demo recovery controls must remain connected.');
 if (!indexSource.includes('comic-reader-root')) throw new Error('The comic reader mount is missing from the application shell.');
 if (!indexSource.includes('safe-window-bootstrap.js')) throw new Error('The safe-window runtime must load before the main game module.');
 if (!indexSource.includes('safe-window-panel')) throw new Error('The safe-window forecast mount is missing.');
 if (!indexSource.includes('tutorial-bootstrap.js')) throw new Error('The first-run tutorial runtime must load before the main game module.');
 if (!indexSource.includes('tutorial-guide')) throw new Error('The field-orientation guide mount is missing.');
+if (!indexSource.includes('demo-console-root')) throw new Error('The guarded demo console mount is missing.');
 for (const expected of ['two-player', 'four-player', 'compositionRule']) {
   if (!deploymentSource.includes(expected)) throw new Error(`Deployment contract missing: ${expected}.`);
 }
@@ -171,6 +182,15 @@ for (const expected of ['spawnBaseEnemies', 'tutorialCoverTarget', 'attemptTutor
 }
 for (const expected of ['CROSS THE THRESHOLD', 'SWAP WITHIN YOUR PAIR', 'LIVE COMBAT', 'TEAMMATE']) {
   if (!tutorialUiSource.includes(expected)) throw new Error(`First-run tutorial UI missing: ${expected}.`);
+}
+for (const expected of ['ABRIR-CODEX-DEMO-001', 'createDemoDeployment', 'assistEnabled', 'interlaceAtSeconds']) {
+  if (!demoScenarioSource.includes(expected)) throw new Error(`Demo scenario contract missing: ${expected}.`);
+}
+for (const expected of ['restoreSquad', 'stageObject', 'activateInterlace', 'overlap()', 'extraction()', 'guard(action)']) {
+  if (!demoAssistSource.includes(expected)) throw new Error(`Demo assist behavior missing: ${expected}.`);
+}
+for (const expected of ['CODEX LIVE', 'RESTART FIXED RUN', 'RESTORE SQUAD', 'F1']) {
+  if (!demoUiSource.includes(expected)) throw new Error(`Demo console copy missing: ${expected}.`);
 }
 if (!minimapSource.includes('drawForecastMarkers')) throw new Error('Interlace opportunity and danger markers must remain visible on the minimap.');
 if (!minimapSource.includes('drawTutorialMarker')) throw new Error('Generated tutorial targets must remain visible on the minimap.');

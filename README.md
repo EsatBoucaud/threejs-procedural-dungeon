@@ -44,6 +44,26 @@ The safe window is now a player-facing risk decision rather than a passive count
 
 This keeps the choice spatial and temporal: extracting still requires returning to the passage and completing the existing team proposal.
 
+### Codex live-demo mode
+
+A deterministic presentation path is available without changing the ordinary game loop.
+
+```bash
+npm run demo
+```
+
+The command opens `/?demo=1&tutorial=0`, skips headquarters setup, and launches the same compact Recife run from `ABRIR-CODEX-DEMO-001` with the standard two-player ownership contract.
+
+A visibly labeled **GUARDED ASSIST** console can move the presenter to combat, dialogue, an object decision, the interlace, an overlap, or the return passage. It can also restore the squad or reconstruct the fixed run. These controls are unavailable outside explicit demo mode and are never represented as player abilities.
+
+The automated demo gate verifies the fixed map, ownership contract, bridge and overlap availability, safe-window length, recovery controls, and ordinary production build:
+
+```bash
+npm run check:demo
+```
+
+See [`docs/CODEX_LIVE_DEMO.md`](docs/CODEX_LIVE_DEMO.md) for the timed three-minute route and emergency recovery sequence.
+
 ### Two-page collectible comic reader
 
 ABRIR includes a framework-light port of the page-turn mechanics used by the Atlas project.
@@ -150,6 +170,7 @@ The current procedural silhouettes are combat-readable placeholders, not final a
 | Turn comic spread | `←` / `→` |
 | Close comic | `Escape` |
 | Force interlace for testing | `I` |
+| Toggle guarded demo console in demo mode | `F1` |
 
 ## Run locally
 
@@ -165,8 +186,16 @@ npm run check:activities
 npm run check:shared-interactions
 npm run check:comic-reader
 npm run check:safe-window
+npm run check:tutorial
+npm run check:demo
 npm run check
 npm run dev
+```
+
+Launch the fixed live presentation:
+
+```bash
+npm run demo
 ```
 
 Create another deterministic state:
@@ -184,19 +213,20 @@ npm run preview
 
 ## Current architecture
 
-The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. A shared layout pass derives wall openings, route-profile tactical obstacles, and collision bounds. Gameplay then derives contracts, deployment ownership, combat-kit resolution, hazards, enemy pressure, safe-window forecasts, assigned major processes, shrine permissions, loot provenance, archive records, shared interactions, collectible-comic presentation, and progression from those deterministic states.
+The procedural generator emits two room graphs, graph depth, room roles, critical-path membership, corridors, difficulty, dressing seeds, extraction locations, overlap geometry, and temporary cross-state bridges. A shared layout pass derives wall openings, route-profile tactical obstacles, and collision bounds. Gameplay then derives contracts, deployment ownership, combat-kit resolution, hazards, enemy pressure, safe-window forecasts, assigned major processes, shrine permissions, loot provenance, archive records, shared interactions, collectible-comic presentation, demo scenarios, and progression from those deterministic states.
 
-The browser can load a committed state, generate a replacement, or export the state it is currently running. A future backend must store and distribute map contracts, player ownership, profiles, archives, inventories, collectible-page progress, and signed run results; it does not need to recreate the renderer.
+The browser can load a committed state, generate a replacement, launch a fixed guarded demo state, or export the state it is currently running. A future backend must store and distribute map contracts, player ownership, profiles, archives, inventories, collectible-page progress, and signed run results; it does not need to recreate the renderer.
 
 ```text
 src/core/       seeded local/remote generation, room architecture, and map validation
 src/content/    characters, combat kits, routes, interactions, interlace forecasts, comic packets, contracts, upgrades, items, room skins
-src/game/       deployment, activity authority, safe-window runtime, comic spread state, combat, mission, hazards, director, archive, progression, navigation
+src/demo/       fixed deterministic presentation scenarios
+src/game/       deployment, activity authority, safe-window runtime, demo assists, comic spread state, combat, mission, hazards, director, archive, progression, navigation
 src/render/     Three.js world, architecture, and entity construction
-src/ui/         deployment, shared interactions, safe-window forecast, comic reader, tactical HUD, minimap, major-process states, and headquarters
+src/ui/         deployment, shared interactions, safe-window forecast, demo console, comic reader, tactical HUD, minimap, major-process states, and headquarters
 public/maps/    committed reproducible map states
 public/assets/  temporary UI marks and future authored assets
-scripts/        generation, headquarters, process, layout, deployment, interaction, comic, safe-window, and repository checks
+scripts/        generation, headquarters, process, layout, deployment, interaction, comic, safe-window, tutorial, demo, and repository checks
 ```
 
 See:
@@ -205,6 +235,8 @@ See:
 - [`docs/PLAYER_WORKFLOW_BACKLOG.md`](docs/PLAYER_WORKFLOW_BACKLOG.md)
 - [`docs/PLAYER_ACTIVITY_AUTHORITY.md`](docs/PLAYER_ACTIVITY_AUTHORITY.md)
 - [`docs/SAFE_WINDOW_CHOICE.md`](docs/SAFE_WINDOW_CHOICE.md)
+- [`docs/FIRST_RUN_TUTORIAL.md`](docs/FIRST_RUN_TUTORIAL.md)
+- [`docs/CODEX_LIVE_DEMO.md`](docs/CODEX_LIVE_DEMO.md)
 - [`docs/COMIC_PAGE_FLIP.md`](docs/COMIC_PAGE_FLIP.md)
 - [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md)
 - [`docs/PLAYABLE_SLICE.md`](docs/PLAYABLE_SLICE.md)
@@ -217,4 +249,4 @@ See:
 
 ## Provenance
 
-This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, tactical architecture, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, multiplayer character ownership, shared interactions, deliberate interlace risk, collectible backstory comics, and a headquarters economy.
+This project is being developed on top of the deterministic Three.js dungeon-generator repository already owned by the project. The original generator is MIT-licensed. ABRIR preserves the seeded, reproducible room-graph core while turning it into an action-looter with independent interlacing spaces, tactical architecture, rival institutional pressure, recoverable objects, persistent progression, route-specific antagonists, multiplayer character ownership, shared interactions, deliberate interlace risk, collectible backstory comics, a guarded live-demo path, and a headquarters economy.
