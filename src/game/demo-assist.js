@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 
-const POSITION_OFFSETS = [
-  [0, 0],
-  [1.5, 0],
-  [-1.5, 0],
-  [0, 1.5],
-  [0, -1.5],
-  [2.4, 1.4],
-  [-2.4, -1.4],
-];
+const POSITION_OFFSETS = (() => {
+  const offsets = [[0, 0]];
+  for (const radius of [1.25, 2.5, 3.75, 5]) {
+    for (let step = 0; step < 12; step += 1) {
+      const angle = (step / 12) * Math.PI * 2;
+      offsets.push([Math.cos(angle) * radius, Math.sin(angle) * radius]);
+    }
+  }
+  return offsets;
+})();
 
 function result(success, action, message, extra = {}) {
   return { success, action, message, ...extra };
@@ -38,13 +39,23 @@ export class DemoAssist {
       const candidate = base.clone().add(new THREE.Vector3(x, 0, z));
       if (this.run.isWalkable(candidate)) return candidate;
     }
-    return base;
+
+    const current = this.run.player.position.clone();
+    if (this.run.isWalkable(current)) return current;
+
+    const entrance = this.run.mission.rooms.get(this.run.mapState.entranceRoomId);
+    if (entrance) {
+      const fallback = new THREE.Vector3(entrance.x, 0, entrance.z);
+      if (this.run.isWalkable(fallback)) return fallback;
+    }
+    return null;
   }
 
   teleport(target, label = 'demo target') {
     const denied = this.guard('teleport');
     if (denied) return denied;
     const destination = this.safePosition(target);
+    if (!destination) return result(false, 'teleport', `No walkable point could be found near ${label}.`);
     this.run.player.position.copy(destination);
     this.run.player.velocity.set(0, 0, 0);
     this.run.player.invulnerable = Math.max(this.run.player.invulnerable, 2.5);
@@ -101,15 +112,20 @@ export class DemoAssist {
     }
 
     const current = this.run.mission.currentRoom;
-    const room = acceptsObject(current)
-      ? current
-      : this.run.mapState.rooms.find((entry) => ['archive', 'treasure'].includes(entry.type))
-        ?? this.run.mapState.rooms.find((entry) => acceptsObject(entry));
-    if (!room) return result(false, 'stage-object', 'No local room can stage a recoverable object.');
+    const candidates = [
+      ...(acceptsObject(current) ? [current] : []),
+      ...this.run.mapState.rooms.filter((entry) => ['archive', 'treasure'].includes(entry.type)),
+      ...this.run.mapState.rooms.filter((entry) => acceptsObject(entry)),
+    ];
+    const room = candidates.find((entry, index) => (
+      candidates.findIndex((candidate) => candidate.id === entry.id) === index
+      && !this.run.mission.roomStates.get(entry.id)?.lootDropped
+    ));
+    if (!room) return result(false, 'stage-object', 'No unused local room can stage another recoverable object. Restart the fixed run.');
 
     this.run.mission.dropLoot(room);
-    const staged = [...this.run.mission.loot].reverse().find((entry) => entry.roomId === room.id && !entry.collected);
-    if (!staged) return result(false, 'stage-object', 'The selected room does not accept recoverable objects.');
+    const staged = [...this.run.mission.loot].reverse().find((entry) => entry.roomId === room.id && !entry.collected && !entry.resolved);
+    if (!staged) return result(false, 'stage-object', 'The selected room refused to create a recoverable object.');
     const moved = this.teleport(staged.position, `staged object ${staged.item.name}`);
     return { ...moved, action: 'stage-object', lootId: staged.lootId, staged: true, roomId: room.id };
   }
