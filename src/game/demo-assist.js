@@ -39,15 +39,6 @@ export class DemoAssist {
       const candidate = base.clone().add(new THREE.Vector3(x, 0, z));
       if (this.run.isWalkable(candidate)) return candidate;
     }
-
-    const current = this.run.player.position.clone();
-    if (this.run.isWalkable(current)) return current;
-
-    const entrance = this.run.mission.rooms.get(this.run.mapState.entranceRoomId);
-    if (entrance) {
-      const fallback = new THREE.Vector3(entrance.x, 0, entrance.z);
-      if (this.run.isWalkable(fallback)) return fallback;
-    }
     return null;
   }
 
@@ -55,7 +46,7 @@ export class DemoAssist {
     const denied = this.guard('teleport');
     if (denied) return denied;
     const destination = this.safePosition(target);
-    if (!destination) return result(false, 'teleport', `No walkable point could be found near ${label}.`);
+    if (!destination) return result(false, 'teleport', `No walkable point could be found near ${label}. Use RESTART FIXED RUN rather than presenting from the wrong coordinate.`);
     this.run.player.position.copy(destination);
     this.run.player.velocity.set(0, 0, 0);
     this.run.player.invulnerable = Math.max(this.run.player.invulnerable, 2.5);
