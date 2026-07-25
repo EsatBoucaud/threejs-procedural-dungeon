@@ -6,7 +6,7 @@
   "description": "ABRIR — deterministic multiplayer Three.js action-looter with action-driven onboarding, shared interactions, deliberate interlace risk, collectible comic infrastructure, and a guarded live-demo path.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "demo": "vite --host 0.0.0.0 --open '/?demo=1&tutorial=0'",
+    "demo": "vite --host 0.0.0.0 --open \"/?demo=1&tutorial=0\"",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "check": "node scripts/check-project.mjs",
