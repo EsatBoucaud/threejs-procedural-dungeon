@@ -26,6 +26,7 @@ jobs:
       - run: npm run check:safe-window
       - run: npm run check:tutorial
       - run: npm run check:demo
+      - run: npm run check:release
       - run: npm run generate:map -- ABRIR-001 public/maps/abrir-001.json
       - run: npm run check
       - run: npm run build
