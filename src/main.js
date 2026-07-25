@@ -4,10 +4,13 @@ import './ui/processes.css';
 import './ui/deployment-builder.css';
 import './ui/shared-interactions.css';
 import './ui/comic-reader.css';
+import './ui/demo-console.css';
 import { applyDeployment } from './content/characters.js';
 import { createFieldComic } from './content/field-comic.js';
 import { seedForRoute } from './content/routes.js';
 import { generateMapState, validateMapState } from './core/dungeon-generator.js';
+import { createDemoState, isDemoRequested } from './demo/demo-scenario.js';
+import { DemoAssist } from './game/demo-assist.js';
 import {
   createDefaultDeployment,
   normalizeDeployment,
@@ -17,6 +20,7 @@ import { InteractiveRunController } from './game/interactive-run-controller.js';
 import { loadProfile, rankTitle } from './game/progression-system.js';
 import { WorldRenderer } from './render/world-renderer.js';
 import { ComicReader } from './ui/comic-reader.js';
+import { DemoConsole } from './ui/demo-console.js';
 import { DeploymentBuilder } from './ui/deployment-builder.js';
 import { Headquarters } from './ui/headquarters.js';
 import { Minimap } from './ui/minimap.js';
@@ -73,6 +77,7 @@ const elements = {
   interactionRoot: document.querySelector('#shared-interaction-root'),
   interactionHint: document.querySelector('#interaction-hint'),
   comicRoot: document.querySelector('#comic-reader-root'),
+  demoRoot: document.querySelector('#demo-console-root'),
 };
 
 const input = {
@@ -81,14 +86,17 @@ const input = {
   aimWorld: null,
 };
 
+const demoRequested = isDemoRequested();
 let mapState;
 let run;
 let minimap;
+let demoAssist = null;
 let started = false;
 let previousTime = performance.now();
 let lastResult = null;
 let pendingRoute = null;
 let pendingDeployment = createDefaultDeployment('two-player');
+let demoRefreshAt = 0;
 
 const headquarters = new Headquarters(elements.headquarters, {
   onDeploy: (route) => deployRoute(route),
@@ -106,6 +114,7 @@ const sharedPanel = new SharedInteractionPanel(elements.interactionRoot, {
   onAction: (action) => {
     const result = run?.handleSharedInteractionAction(action);
     if (result && result.success === false) feed(`Interaction request refused: ${result.reason}.`, 'danger');
+    updateDemoConsole();
   },
 });
 
@@ -117,8 +126,12 @@ const comicReader = new ComicReader(elements.comicRoot, {
   },
 });
 
+const demoConsole = new DemoConsole(elements.demoRoot, {
+  onAction: (action) => handleDemoAction(action),
+});
+
 function formatCurrency(value) {
-  return `₢ ${Math.round(value).toLocaleString()}`;
+  return `₢ ${Math.round(value).toLocaleString('en-US')}`;
 }
 
 function formatTimer(seconds) {
@@ -139,6 +152,11 @@ function feed(message, tone = '') {
   window.setTimeout(() => item.remove(), 8600);
 }
 
+function updateDemoConsole() {
+  if (!demoAssist?.enabled) return;
+  demoConsole.update(demoAssist.snapshot());
+}
+
 function updateProfile(profile = loadProfile()) {
   elements.profileRank.textContent = `RANK ${profile.rank}`;
   elements.profileTitle.textContent = rankTitle(profile.rank);
@@ -151,6 +169,7 @@ function updateOperative(operative, health, maxHealth) {
   elements.operativeMark.style.setProperty('--operative-color', `#${operative.color.toString(16).padStart(6, '0')}`);
   elements.kit.textContent = `${operative.kitName ?? operative.role} // ${operative.combatFamily?.toUpperCase() ?? ''}`;
   elements.health.style.width = `${Math.max(0, (health / maxHealth) * 100)}%`;
+  updateDemoConsole();
 }
 
 function renderTeam(team) {
@@ -168,6 +187,7 @@ function renderTeam(team) {
     `;
     elements.team.append(card);
   }
+  updateDemoConsole();
 }
 
 function renderContract(contract, status) {
@@ -204,14 +224,17 @@ function createRunEvents() {
     onOperative: updateOperative,
     onHealth: (health, maxHealth) => {
       elements.health.style.width = `${Math.max(0, (health / maxHealth) * 100)}%`;
+      updateDemoConsole();
     },
     onTeam: renderTeam,
     onRoom: (room) => {
       const origin = room.origin === 'interlace' ? 'R' : 'L';
       elements.room.textContent = `${origin}:${room.type.toUpperCase()} ${String(room.id)}`;
+      updateDemoConsole();
     },
     onLoot: (value) => {
       elements.loot.textContent = formatCurrency(value);
+      updateDemoConsole();
     },
     onTimer: (seconds) => {
       if (!document.body.classList.contains('interlaced')) elements.timer.textContent = formatTimer(seconds);
@@ -252,6 +275,7 @@ function createRunEvents() {
         `${details.rooms} remote rooms, ${details.connections} remote links, ${details.bridges} bridges, ${details.overlaps} overlaps. ${details.majorProcess?.name ?? 'A Chave Geral'} is assigned to the response.`,
         'danger',
       );
+      updateDemoConsole();
     },
     onInteractionHint: updateInteractionHint,
     onSharedInteraction: (snapshot) => {
@@ -259,6 +283,7 @@ function createRunEvents() {
       sharedPanel.update(snapshot);
       document.body.classList.toggle('shared-interaction-open', Boolean(snapshot.activeSession));
       if (snapshot.activeSession) elements.interactionHint.classList.remove('visible');
+      updateDemoConsole();
     },
     onInteractionEffect: ({ type, effect }) => {
       feed(`${type.replaceAll('-', ' ')} consequence registered: ${effect.replaceAll('-', ' ')}.`, effect.includes('loss') || effect.includes('risk') ? 'danger' : 'good');
@@ -301,6 +326,9 @@ function installRun(state, deployment = state.deployment ?? pendingDeployment) {
   renderer.buildMap(state);
   minimap = new Minimap(elements.minimap, state);
   run = new InteractiveRunController(renderer, state, createRunEvents());
+  demoAssist = state.demoMode?.assistEnabled ? new DemoAssist(run) : null;
+  demoConsole.setEnabled(Boolean(demoAssist?.enabled));
+  document.body.classList.toggle('demo-mode', Boolean(demoAssist?.enabled));
   sharedPanel.setPerspective(normalizedDeployment.localPlayerId);
   const routeLabel = state.route?.name ? `${state.route.name} // ` : '';
   const modeLabel = normalizedDeployment.mode === 'two-player' ? '2P' : '4P';
@@ -314,6 +342,7 @@ function installRun(state, deployment = state.deployment ?? pendingDeployment) {
   input.aimWorld = run.player.position.clone();
   input.aimWorld.z -= 5;
   updateProfile();
+  updateDemoConsole();
 }
 
 function begin() {
@@ -333,6 +362,22 @@ function begin() {
     : `${pendingDeployment.localPlayerId.toUpperCase()} controls one character; the other three belong to the other players.`;
   feed(`${routeName}: passage opened. ${ownership} Any player may lead field interactions.`, 'good');
   pendingRoute = null;
+}
+
+function launchDemo() {
+  if (elements.debrief.open) elements.debrief.close();
+  if (elements.briefing.open) elements.briefing.close();
+  headquarters.close();
+  const state = createDemoState();
+  pendingDeployment = state.deployment;
+  pendingRoute = null;
+  deploymentBuilder.setDeployment(pendingDeployment);
+  installRun(state, pendingDeployment);
+  started = true;
+  lastResult = null;
+  feed('CODEX DEMO READY. Fixed seed, compact route, two-player ownership, guarded recovery controls.', 'good');
+  feed('Suggested flow: combat → Q swap → dialogue/object → interlace → overlap → comic.', '');
+  updateDemoConsole();
 }
 
 function showDebrief(result) {
@@ -367,11 +412,16 @@ function showDebrief(result) {
     : `CONTRACT INCOMPLETE — ${result.contract.title} / EMERGENCY RATE APPLIED`;
   elements.debriefContract.className = `contract-result ${result.contractComplete ? 'complete' : 'failed'}`;
   updateProfile(result.profile);
+  updateDemoConsole();
   elements.debrief.showModal();
 }
 
 function returnToInstitute() {
   elements.debrief.close();
+  if (mapState?.demoMode) {
+    launchDemo();
+    return;
+  }
   headquarters.open(lastResult);
 }
 
@@ -412,6 +462,32 @@ function openFieldComic() {
   comicReader.open(createFieldComic(mapState, run), { title });
 }
 
+function handleDemoAction(action) {
+  if (!demoAssist?.enabled) return;
+  if (sharedPanel.isOpen() || comicReader.isOpen()) return;
+  if (action === 'restart-demo') {
+    launchDemo();
+    return;
+  }
+  if (action === 'comic') {
+    openFieldComic();
+    return;
+  }
+  const handlers = {
+    'combat-room': () => demoAssist.combatRoom(),
+    dialogue: () => demoAssist.interaction('dialogue'),
+    'stage-object': () => demoAssist.stageObject(),
+    'activate-interlace': () => demoAssist.activateInterlace(),
+    overlap: () => demoAssist.overlap(),
+    'restore-squad': () => demoAssist.restoreSquad(),
+    extraction: () => demoAssist.extraction(),
+  };
+  const outcome = handlers[action]?.();
+  if (!outcome) return;
+  feed(outcome.message, outcome.success ? 'good' : 'danger');
+  updateDemoConsole();
+}
+
 function movementVector() {
   return {
     x: (input.keys.has('KeyD') ? 1 : 0) - (input.keys.has('KeyA') ? 1 : 0),
@@ -422,6 +498,11 @@ function movementVector() {
 window.addEventListener('keydown', (event) => {
   input.keys.add(event.code);
   if (event.code === 'Space') event.preventDefault();
+  if (event.code === 'F1' && demoAssist?.enabled) {
+    event.preventDefault();
+    demoConsole.toggle();
+    return;
+  }
   if (comicReader.isOpen()) return;
   if (!started || event.repeat) return;
   if (sharedPanel.isOpen()) return;
@@ -468,13 +549,21 @@ function frame(time) {
       run.update(delta, overlayOpen ? { x: 0, z: 0 } : movementVector(), aim);
     } else renderer.update(delta, run.player.position, aim);
   }
+  if (demoAssist?.enabled && time >= demoRefreshAt) {
+    demoRefreshAt = time + 500;
+    updateDemoConsole();
+  }
   requestAnimationFrame(frame);
 }
 
-mapState = await loadInitialMap();
-pendingDeployment = createDefaultDeployment('two-player');
-mapState.deployment = structuredClone(pendingDeployment);
-deploymentBuilder.setDeployment(pendingDeployment);
-installRun(mapState, pendingDeployment);
-headquarters.open();
+if (demoRequested) {
+  launchDemo();
+} else {
+  mapState = await loadInitialMap();
+  pendingDeployment = createDefaultDeployment('two-player');
+  mapState.deployment = structuredClone(pendingDeployment);
+  deploymentBuilder.setDeployment(pendingDeployment);
+  installRun(mapState, pendingDeployment);
+  headquarters.open();
+}
 requestAnimationFrame(frame);
