@@ -15,22 +15,19 @@ assert.equal(mapValidation.valid, true, mapValidation.errors.join(' '));
 assert.equal(state.demoMode.assistEnabled, true);
 assert.equal(state.seedLabel, 'ABRIR-CODEX-DEMO-001');
 assert.equal(state.rooms.length, 18);
-assert.ok(state.interlaceAtSeconds <= 45, 'The demo safe window should be short enough for a live presentation.');
+assert.ok(
+  state.interlaceAtSeconds >= 120 && state.interlaceAtSeconds <= 240,
+  'The demo interlace should wait for the presenter unless triggered manually.',
+);
 assert.ok(state.interlace.bridges.length > 0, 'The demo needs a visible cross-state bridge.');
 assert.ok(state.interlace.overlaps.length > 0, 'The demo needs at least one overlap showcase coordinate.');
 assert.equal(validateDeployment(state.deployment).valid, true);
 
 const activeOperative = { name: 'Zélia Amato', maxHealth: 100, ability: { cooldown: 8 }, dodge: { cooldown: 3 } };
-const availableLoot = {
-  lootId: 'loot-demo',
-  roomId: state.entranceRoomId,
-  collected: false,
-  resolved: false,
-  position: new THREE.Vector3(3, 0, 4),
-  item: { name: 'Demo Object' },
-};
 let interlaceCalls = 0;
 let progressCalls = 0;
+let stagedRoom = null;
+const entrance = state.rooms.find((room) => room.id === state.entranceRoomId);
 const run = {
   mapState: state,
   finished: false,
@@ -50,13 +47,23 @@ const run = {
   },
   renderer: { playerMesh: { position: new THREE.Vector3() } },
   mission: {
-    currentRoom: state.rooms[0],
+    currentRoom: entrance,
     rooms: new Map(state.rooms.map((room) => [room.id, room])),
-    loot: [availableLoot],
+    loot: [],
     recovered: [],
     interactionNodes: [],
     updateRoom: () => {},
-    dropLoot: () => {},
+    dropLoot(room) {
+      stagedRoom = room;
+      this.loot.push({
+        lootId: 'loot-demo',
+        roomId: room.id,
+        collected: false,
+        resolved: false,
+        position: new THREE.Vector3(room.x + 1, 0, room.z - 1),
+        item: { name: 'Demo Object' },
+      });
+    },
   },
   events: {},
   teamSnapshot: () => [100, 90, 80, 70].map((maxHealth, index) => ({ maxHealth, health: run.healthByOperative[index] })),
@@ -77,8 +84,11 @@ assert.deepEqual(run.dodgeCooldowns, [0, 0, 0, 0]);
 const staged = assist.stageObject();
 assert.equal(staged.success, true);
 assert.equal(staged.lootId, 'loot-demo');
-assert.equal(run.player.position.x, 3);
-assert.equal(run.player.position.z, 4);
+assert.ok(stagedRoom, 'The assist should create an object when no unresolved object exists.');
+assert.ok(!['entrance', 'breach', 'shrine'].includes(stagedRoom.type), 'The demo object must be staged in an eligible room.');
+assert.equal(staged.roomId, stagedRoom.id);
+assert.equal(run.player.position.x, stagedRoom.x + 1);
+assert.equal(run.player.position.z, stagedRoom.z - 1);
 assert.ok(progressCalls > 0);
 
 const interlace = assist.activateInterlace();
@@ -91,4 +101,4 @@ assert.equal(overlap.overlapId, state.interlace.overlaps[0].id);
 const disabledAssist = new DemoAssist({ ...run, mapState: { ...state, demoMode: null } });
 assert.equal(disabledAssist.restoreSquad().success, false, 'Demo assists must not leak into ordinary runs.');
 
-console.log(`Demo readiness check passed: ${state.rooms.length} local rooms, ${state.interlace.rooms.length} remote rooms, ${state.interlace.overlaps.length} overlaps, fixed 2P deployment, guarded assists.`);
+console.log(`Demo readiness check passed: ${state.rooms.length} local rooms, ${state.interlace.rooms.length} remote rooms, ${state.interlace.overlaps.length} overlaps, fixed 2P deployment, guarded assists, presenter-controlled interlace.`);
