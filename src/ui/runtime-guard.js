@@ -3,6 +3,7 @@ import './runtime-guard.css';
 const root = document.querySelector('#runtime-status');
 let bootReady = false;
 let bootTimer = null;
+let probeTimer = null;
 
 function safeMessage(value) {
   const text = value instanceof Error ? value.message : String(value ?? 'Unknown runtime failure.');
@@ -22,6 +23,7 @@ function renderLoading() {
 }
 
 function renderFailure(reason) {
+  window.clearInterval(probeTimer);
   if (!root) return;
   root.className = 'visible failure';
   root.innerHTML = `
@@ -35,8 +37,10 @@ function renderFailure(reason) {
 }
 
 function markReady(detail = {}) {
+  if (bootReady) return;
   bootReady = true;
   window.clearTimeout(bootTimer);
+  window.clearInterval(probeTimer);
   if (!root) return;
   root.className = 'visible ready';
   root.innerHTML = `
@@ -53,6 +57,16 @@ function markReady(detail = {}) {
   }, detail.demo ? 900 : 600);
 }
 
+function probeRuntime() {
+  if (bootReady) return;
+  const seed = document.querySelector('#seed-label')?.textContent?.trim();
+  const demo = document.body.classList.contains('demo-mode');
+  const headquarters = document.querySelector('#headquarters');
+  const normalReady = Boolean(headquarters?.open && seed && seed !== '—');
+  const demoReady = Boolean(demo && seed?.includes('ABRIR-CODEX-DEMO-001'));
+  if (demoReady || normalReady) markReady({ demo, seed });
+}
+
 root?.addEventListener('click', (event) => {
   if (!event.target.closest('[data-runtime-action="reload"]')) return;
   window.location.reload();
@@ -66,6 +80,7 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => renderFailure(event.reason));
 
 renderLoading();
+probeTimer = window.setInterval(probeRuntime, 100);
 bootTimer = window.setTimeout(() => {
   if (!bootReady) renderFailure('Startup exceeded ten seconds. Reload the fixed state before presenting.');
 }, 10000);
