@@ -10,7 +10,7 @@ export class DemoConsole {
     this.root = root;
     this.callbacks = callbacks;
     this.enabled = false;
-    this.collapsed = false;
+    this.collapsed = true;
     this.snapshot = null;
     root.addEventListener('click', (event) => this.handleClick(event));
     this.render();
