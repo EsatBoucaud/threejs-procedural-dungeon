@@ -1,14 +1,16 @@
 {
   "name": "abrir-game-prototype",
   "private": true,
-  "version": "0.12.0",
+  "version": "0.13.0",
   "type": "module",
-  "description": "ABRIR — deterministic multiplayer Three.js action-looter with action-driven onboarding, shared interactions, deliberate interlace risk, collectible comic infrastructure, and a guarded live-demo path.",
+  "description": "ABRIR — deterministic multiplayer Three.js action-looter with action-driven onboarding, shared interactions, deliberate interlace risk, collectible comic infrastructure, and an isolated live-demo path.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "demo": "vite --host 0.0.0.0 --open \"/?demo=1&tutorial=0\"",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "smoke:demo": "node scripts/smoke-demo-server.mjs",
+    "preflight": "npm run check:generation && npm run check:headquarters && npm run check:processes && npm run check:layout && npm run check:deployment && npm run check:activities && npm run check:shared-interactions && npm run check:comic-reader && npm run check:safe-window && npm run check:tutorial && npm run check:demo && npm run check:release && npm run check && npm run build && npm run smoke:demo",
     "check": "node scripts/check-project.mjs",
     "check:generation": "node scripts/check-generation.mjs",
     "check:headquarters": "node scripts/check-headquarters.mjs",
@@ -21,6 +23,7 @@
     "check:safe-window": "node scripts/check-safe-window.mjs",
     "check:tutorial": "node scripts/check-tutorial.mjs",
     "check:demo": "node scripts/check-demo-readiness.mjs",
+    "check:release": "node scripts/check-release-candidate.mjs",
     "generate:map": "node scripts/generate-map.mjs"
   },
   "dependencies": {

@@ -13,7 +13,7 @@ const EMPTY_PROFILE = {
   bestPayout: 0,
   lastSeed: null,
   lastRouteId: null,
-  unlocks: ['socrates', 'zelia-amato', 'lia', 'kindred'],
+  unlocks: ['socrates', 'zelia-amato', 'lia', 'chilindo'],
   upgrades: [],
   statistics: {
     majorProcessesDefeated: 0,
@@ -34,12 +34,24 @@ function rankForExperience(experience) {
   return Math.max(1, Math.floor(Math.sqrt(Math.max(0, experience) / 180)) + 1);
 }
 
+function demoRequested() {
+  if (typeof location === 'undefined') return false;
+  const value = new URLSearchParams(location.search).get('demo');
+  return value === '1' || value === 'true' || value === 'codex';
+}
+
+function normalizedUnlocks(stored) {
+  const source = Array.isArray(stored?.unlocks) ? stored.unlocks : EMPTY_PROFILE.unlocks;
+  return [...new Set(source.map((id) => (id === 'kindred' ? 'chilindo' : id)))];
+}
+
 function normalizeProfile(stored) {
   const storedStatistics = stored?.statistics ?? {};
   const profile = {
     ...structuredClone(EMPTY_PROFILE),
     ...stored,
     version: 2,
+    unlocks: normalizedUnlocks(stored),
     upgrades: Array.isArray(stored?.upgrades) ? stored.upgrades : [],
     statistics: {
       ...structuredClone(EMPTY_PROFILE.statistics),
@@ -54,6 +66,10 @@ function normalizeProfile(stored) {
   return profile;
 }
 
+export function createDemoProfile() {
+  return normalizeProfile(EMPTY_PROFILE);
+}
+
 export function saveProfile(profile) {
   const normalized = normalizeProfile(profile);
   try {
@@ -65,6 +81,7 @@ export function saveProfile(profile) {
 }
 
 export function loadProfile() {
+  if (demoRequested()) return createDemoProfile();
   try {
     const current = JSON.parse(localStorage.getItem(PROFILE_KEY) ?? 'null');
     if (current) return normalizeProfile(current);

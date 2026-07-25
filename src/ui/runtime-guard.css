@@ -1,0 +1,60 @@
+#runtime-status {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  place-items: center;
+  padding: 18px;
+  pointer-events: none;
+  background: rgba(2, 4, 8, .84);
+  backdrop-filter: blur(10px);
+}
+
+#runtime-status.visible { display: grid; }
+#runtime-status.failure { pointer-events: auto; }
+
+.runtime-status-shell {
+  width: min(520px, calc(100vw - 36px));
+  padding: 22px;
+  border: 1px solid rgba(213, 183, 109, .34);
+  background: linear-gradient(145deg, rgba(7, 11, 18, .98), rgba(19, 18, 22, .98));
+  box-shadow: 0 35px 130px rgba(0, 0, 0, .72), inset 0 0 0 1px rgba(255, 255, 255, .025);
+  text-align: center;
+}
+
+.runtime-status-shell span,
+.runtime-status-shell strong { display: block; }
+.runtime-status-shell span { color: #70d0c4; font-size: 8px; letter-spacing: .18em; }
+.runtime-status-shell strong { margin-top: 8px; color: #e1c77e; font: 28px/1 Georgia, serif; letter-spacing: .07em; }
+.runtime-status-shell p { margin: 12px auto 0; max-width: 44ch; color: #aeb7c2; font-size: 10px; line-height: 1.55; }
+.runtime-status-shell button {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(226, 118, 96, .5);
+  background: rgba(226, 118, 96, .08);
+  color: #ffd0c7;
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+
+#runtime-status.loading .runtime-status-shell { animation: runtime-breathe 1.25s ease-in-out infinite alternate; }
+#runtime-status.ready { animation: runtime-ready .6s ease both; }
+#runtime-status.failure .runtime-status-shell { border-color: rgba(226, 103, 84, .62); }
+#runtime-status.failure .runtime-status-shell span,
+#runtime-status.failure .runtime-status-shell strong { color: #ef8a78; }
+
+@keyframes runtime-breathe {
+  from { transform: translateY(0); filter: brightness(.96); }
+  to { transform: translateY(-3px); filter: brightness(1.08); }
+}
+
+@keyframes runtime-ready {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #runtime-status.loading .runtime-status-shell,
+  #runtime-status.ready { animation: none; }
+}

@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: npm run check:generation
       - run: npm run check:headquarters
       - run: npm run check:processes
@@ -26,6 +26,8 @@ jobs:
       - run: npm run check:safe-window
       - run: npm run check:tutorial
       - run: npm run check:demo
+      - run: npm run check:release
       - run: npm run generate:map -- ABRIR-001 public/maps/abrir-001.json
       - run: npm run check
       - run: npm run build
+      - run: npm run smoke:demo

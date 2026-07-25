@@ -9,6 +9,7 @@
   </head>
   <body>
     <div id="app">
+      <div id="runtime-status" aria-live="polite"></div>
       <canvas id="game-canvas" aria-label="ABRIR game prototype"></canvas>
       <div id="vignette"></div>
       <div id="interlace-flash"></div>
@@ -196,8 +197,10 @@
         </div>
       </dialog>
     </div>
+    <script type="module" src="/src/ui/runtime-guard.js"></script>
     <script type="module" src="/src/ui/safe-window-bootstrap.js"></script>
     <script type="module" src="/src/ui/tutorial-bootstrap.js"></script>
+    <script type="module" src="/src/game/demo-focus-runtime.js"></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

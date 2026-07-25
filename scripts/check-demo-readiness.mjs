@@ -4,10 +4,17 @@ import { validateMapState } from '../src/core/dungeon-generator.js';
 import { createDemoState, isDemoRequested } from '../src/demo/demo-scenario.js';
 import { DemoAssist } from '../src/game/demo-assist.js';
 import { validateDeployment } from '../src/game/deployment-system.js';
+import { createDemoProfile } from '../src/game/progression-system.js';
 
 assert.equal(isDemoRequested('?demo=1'), true);
 assert.equal(isDemoRequested('?demo=codex'), true);
 assert.equal(isDemoRequested('?demo=0'), false);
+
+const profile = createDemoProfile();
+assert.equal(profile.rank, 1);
+assert.deepEqual(profile.upgrades, [], 'Demo runs must not inherit persistent upgrades.');
+assert.ok(profile.unlocks.includes('chilindo'), 'The current roster identity must exist in the clean profile.');
+assert.ok(!profile.unlocks.includes('kindred'), 'The retired masked-character identity must be migrated away.');
 
 const state = createDemoState();
 const mapValidation = validateMapState(state);
@@ -28,6 +35,7 @@ let interlaceCalls = 0;
 let progressCalls = 0;
 let stagedRoom = null;
 const entrance = state.rooms.find((room) => room.id === state.entranceRoomId);
+const roomStates = new Map(state.rooms.map((room) => [room.id, { lootDropped: false }]));
 const run = {
   mapState: state,
   finished: false,
@@ -49,14 +57,16 @@ const run = {
   mission: {
     currentRoom: entrance,
     rooms: new Map(state.rooms.map((room) => [room.id, room])),
+    roomStates,
     loot: [],
     recovered: [],
     interactionNodes: [],
     updateRoom: () => {},
     dropLoot(room) {
       stagedRoom = room;
+      this.roomStates.get(room.id).lootDropped = true;
       this.loot.push({
-        lootId: 'loot-demo',
+        lootId: `loot-demo-${this.loot.length + 1}`,
         roomId: room.id,
         collected: false,
         resolved: false,
@@ -83,13 +93,26 @@ assert.deepEqual(run.dodgeCooldowns, [0, 0, 0, 0]);
 
 const staged = assist.stageObject();
 assert.equal(staged.success, true);
-assert.equal(staged.lootId, 'loot-demo');
+assert.equal(staged.lootId, 'loot-demo-1');
 assert.ok(stagedRoom, 'The assist should create an object when no unresolved object exists.');
 assert.ok(!['entrance', 'breach', 'shrine'].includes(stagedRoom.type), 'The demo object must be staged in an eligible room.');
 assert.equal(staged.roomId, stagedRoom.id);
 assert.equal(run.player.position.x, stagedRoom.x + 1);
 assert.equal(run.player.position.z, stagedRoom.z - 1);
 assert.ok(progressCalls > 0);
+
+run.mission.loot[0].resolved = true;
+const secondStage = assist.stageObject();
+assert.equal(secondStage.success, true, 'The assist should find another unused eligible room after the first object is resolved.');
+assert.notEqual(secondStage.roomId, staged.roomId);
+
+const originalWalkability = run.isWalkable;
+const beforeBlockedTeleport = run.player.position.clone();
+run.isWalkable = () => false;
+const blocked = assist.teleport(new THREE.Vector3(999, 0, 999), 'blocked test coordinate');
+assert.equal(blocked.success, false, 'Unreachable targets must report failure rather than claiming the presenter is in position.');
+assert.ok(run.player.position.distanceTo(beforeBlockedTeleport) < 0.01, 'Failed assisted movement must leave the player in place.');
+run.isWalkable = originalWalkability;
 
 const interlace = assist.activateInterlace();
 assert.equal(interlace.success, true);
@@ -101,4 +124,4 @@ assert.equal(overlap.overlapId, state.interlace.overlaps[0].id);
 const disabledAssist = new DemoAssist({ ...run, mapState: { ...state, demoMode: null } });
 assert.equal(disabledAssist.restoreSquad().success, false, 'Demo assists must not leak into ordinary runs.');
 
-console.log(`Demo readiness check passed: ${state.rooms.length} local rooms, ${state.interlace.rooms.length} remote rooms, ${state.interlace.overlaps.length} overlaps, fixed 2P deployment, guarded assists, presenter-controlled interlace.`);
+console.log(`Demo readiness check passed: ${state.rooms.length} local rooms, ${state.interlace.rooms.length} remote rooms, ${state.interlace.overlaps.length} overlaps, fixed 2P deployment, clean profile, guarded assists, explicit blocked-target failure, presenter-controlled interlace.`);
